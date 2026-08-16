@@ -1,12 +1,15 @@
 """
 Corre cada 5 horas via GitHub Actions.
-1. Lee todos los usuarios anotados en Supabase (con sus idiomas, modalidad y pais).
+1. Lee todos los usuarios anotados en Supabase (con su rubro, nivel de
+   experiencia, idiomas, modalidad y pais).
 2. Lee ofertas de portales de empleo publicos (RSS + JSON), UNA sola vez por
    corrida (no una vez por usuario), para no sobrecargar ningun servicio.
-3. Filtra las que son junior/trainee y matchean con las palabras clave/skills
-   de cada usuario.
-4. Arma un resumen de perfil (idiomas -> regiones con alcance) y lo incluye
-   arriba de cada mail.
+3. Matchea con las palabras clave/skills/rubro de cada usuario y, si eligio
+   un nivel de experiencia especifico (junior, semi senior, senior,
+   gerencial), filtra tambien por eso. Si eligio "cualquiera", no filtra
+   por nivel: sirve para cualquier persona, seniority y rubro.
+4. Arma un resumen de perfil (nivel, idiomas -> regiones con alcance) y lo
+   incluye arriba de cada mail.
 5. Manda un mail (via Brevo) con las nuevas ofertas a cada usuario.
 6. Registra lo ya enviado para no repetir avisos.
 """
@@ -34,10 +37,14 @@ REQUEST_HEADERS = {"User-Agent": "alertas-empleo-bot/1.0 (+github actions, uso p
 # Cada feed se pide UNA sola vez por corrida del robot (cada 5hs), sin
 # importar cuantos usuarios haya, para no golpear ningun portal con
 # pedidos repetidos. "lang" es el idioma predominante de esa fuente.
+# Son feeds generales (todo rubro y todo nivel), no solo tech ni solo junior.
 RSS_FEEDS = [
     {"url": "https://weworkremotely.com/categories/remote-programming-jobs.rss", "lang": "en"},
     {"url": "https://weworkremotely.com/categories/remote-design-jobs.rss", "lang": "en"},
     {"url": "https://weworkremotely.com/categories/remote-marketing-jobs.rss", "lang": "en"},
+    {"url": "https://weworkremotely.com/categories/remote-customer-support-jobs.rss", "lang": "en"},
+    {"url": "https://weworkremotely.com/categories/remote-sales-and-marketing-jobs.rss", "lang": "en"},
+    {"url": "https://weworkremotely.com/categories/remote-management-and-finance-jobs.rss", "lang": "en"},
     {"url": "https://remotive.com/feed/jobs", "lang": "en"},
     {"url": "https://remoteok.com/remote-jobs.rss", "lang": "en"},
     {"url": "https://www.arbeitnow.com/feed", "lang": "en"},
@@ -49,10 +56,32 @@ JSON_FEEDS = [
     {"url": "https://jobicy.com/api/v2/remote-jobs?count=50", "lang": "en", "kind": "jobicy"},
 ]
 
-JUNIOR_TERMS = [
-    "junior", "trainee", "entry level", "entry-level", "sin experiencia",
-    "becario", "beca", "primer empleo", "graduate", "asistente", "aprendiz",
-]
+# Terminos que ayudan a reconocer el nivel de experiencia de un aviso.
+# Solo se usan si el usuario eligio un nivel especifico (no "cualquiera").
+SENIORITY_TERMS = {
+    "junior": [
+        "junior", "trainee", "entry level", "entry-level", "sin experiencia",
+        "becario", "beca", "primer empleo", "graduate", "asistente", "aprendiz",
+    ],
+    "semi_senior": [
+        "semi senior", "semi-senior", "ssr.", " ssr ", "mid level", "mid-level",
+        "intermedio", "intermediate",
+    ],
+    "senior": [
+        "senior", " sr.", " sr ", "lead", "principal", "staff",
+    ],
+    "gerencial": [
+        "gerente", "manager", "director", "head of", "jefe", "chief", "vp ", "vicepresidente",
+    ],
+}
+
+SENIORITY_LABEL = {
+    "cualquiera": "cualquier nivel de experiencia",
+    "junior": "Junior / Trainee",
+    "semi_senior": "Semi Senior",
+    "senior": "Senior",
+    "gerencial": "Gerencial / Directivo",
+}
 
 LANG_REGIONS = {
     "es": "España y toda Latinoamerica",
@@ -138,7 +167,7 @@ def get_active_users():
         f"{SUPABASE_URL}/rest/v1/users",
         headers=HEADERS,
         params={
-            "select": "id,email,keywords,skills,areas,languages,work_mode,country",
+            "select": "id,email,keywords,skills,areas,languages,work_mode,country,seniority",
             "active": "eq.true",
         },
         timeout=30,
@@ -167,9 +196,17 @@ def mark_sent(user_id, link):
     )
 
 
-def is_junior(text):
+def matches_seniority(text, seniority):
+    """Si el usuario eligio un nivel especifico, el aviso tiene que
+    mencionarlo. Si eligio "cualquiera" (o no eligio nada), no filtra por
+    nivel: sirve para cualquier persona y seniority."""
+    if not seniority or seniority == "cualquiera":
+        return True
+    terms = SENIORITY_TERMS.get(seniority)
+    if not terms:
+        return True
     t = text.lower()
-    return any(term in t for term in JUNIOR_TERMS)
+    return any(term in t for term in terms)
 
 
 def match_score(job_text, user_terms):
@@ -181,6 +218,8 @@ def perfil_resumen(user):
     langs = user.get("languages") or []
     mode = user.get("work_mode") or "remoto_mundial"
     mode_txt = WORK_MODE_LABEL.get(mode, mode)
+    seniority = user.get("seniority") or "cualquiera"
+    seniority_txt = SENIORITY_LABEL.get(seniority, seniority)
     if langs:
         regiones = "; ".join(LANG_REGIONS.get(l, l) for l in langs)
     else:
@@ -188,7 +227,8 @@ def perfil_resumen(user):
     pais = user.get("country")
     pais_txt = f" ({pais})" if pais else ""
     return (
-        f"Buscamos ofertas <b>{mode_txt}</b>{pais_txt}. Por tus idiomas, tu alcance potencial es: {regiones}. "
+        f"Buscamos ofertas <b>{mode_txt}</b>{pais_txt} para nivel <b>{seniority_txt}</b>. "
+        f"Por tus idiomas, tu alcance potencial es: {regiones}. "
         f"Por ahora las fuentes automaticas son principalmente en ingles; a medida que sumemos mas portales "
         f"locales vas a recibir tambien ofertas en tus otros idiomas."
     )
@@ -211,7 +251,7 @@ def send_email(to_email, jobs, user):
       <div style="background:#f4f0ff;border:1px solid #e4d9ff;border-radius:10px;padding:12px 16px;font-size:13px;color:#4c1d95;margin-bottom:16px">
         {resumen}
       </div>
-      <p>Encontramos {len(jobs)} oferta(s) junior/trainee que podrian matchear con tu perfil.</p>
+      <p>Encontramos {len(jobs)} oferta(s) que podrian matchear con tu perfil.</p>
       <table style="width:100%;border-collapse:collapse">{rows}</table>
       <p style="color:#999;font-size:12px;margin-top:24px">
         Recibis esto porque te registraste en el buscador automatico de empleo.
@@ -221,7 +261,7 @@ def send_email(to_email, jobs, user):
     payload = {
         "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
         "to": [{"email": to_email}],
-        "subject": f"🔎 {len(jobs)} nuevas ofertas junior/trainee para vos",
+        "subject": f"🔎 {len(jobs)} nuevas ofertas de trabajo para vos",
         "htmlContent": html,
     }
     r = requests.post(
@@ -246,6 +286,7 @@ def main():
             + (user.get("skills") or [])
             + (user.get("areas") or [])
         )
+        seniority = user.get("seniority") or "cualquiera"
         sent_links = get_sent_links(user["id"])
 
         matches = []
@@ -253,7 +294,7 @@ def main():
             if job["link"] in sent_links:
                 continue
             full_text = job["title"] + " " + job["desc"]
-            if not is_junior(full_text):
+            if not matches_seniority(full_text, seniority):
                 continue
             if user_terms and match_score(full_text, user_terms) == 0:
                 continue
