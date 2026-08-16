@@ -5,97 +5,371 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Alertas de empleo junior/trainee</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.4.9/mammoth.browser.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, Segoe UI, Arial, sans-serif;
-    background: #f6f7fb; margin: 0; padding: 24px;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    margin: 0; padding: 24px;
     display: flex; justify-content: center;
+    background: linear-gradient(135deg, #eef2ff 0%, #fdf2f8 45%, #ecfeff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
   .card {
-    background: #fff; max-width: 560px; width: 100%;
-    padding: 32px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    background: #fff; max-width: 620px; width: 100%;
+    padding: 34px 36px 28px; border-radius: 18px;
+    box-shadow: 0 10px 40px rgba(76,29,149,.10), 0 2px 8px rgba(0,0,0,.04);
+    border: 1px solid #f0eefc;
   }
-  h1 { font-size: 22px; margin-bottom: 4px; }
-  p.sub { color: #666; margin-top: 0; margin-bottom: 24px; font-size: 14px; }
-  label { display: block; font-weight: 600; margin: 16px 0 6px; font-size: 14px; }
+  h1 {
+    font-size: 25px; margin: 0 0 6px;
+    background: linear-gradient(90deg,#6d28d9,#db2777 60%,#2563eb);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-weight: 800;
+  }
+  p.sub { color: #666; margin-top: 0; margin-bottom: 22px; font-size: 14px; line-height: 1.5; }
+  .step {
+    border-left: 3px solid #ede9fe; padding: 4px 0 4px 16px; margin: 18px 0;
+  }
+  .step.s2 { border-color: #fce7f3; }
+  .step.s3 { border-color: #dbeafe; }
+  .step.s4 { border-color: #d1fae5; }
+  .step.s5 { border-color: #fef3c7; }
+  .step.s6 { border-color: #ffe4e6; }
+  label { display: block; font-weight: 700; margin: 0 0 6px; font-size: 14px; color: #27272a; }
+  .stepnum {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:20px; height:20px; border-radius:50%; background:#6d28d9; color:#fff;
+    font-size:11px; font-weight:800; margin-right:8px;
+  }
   input[type=email], input[type=text], select, textarea {
-    width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px;
-    font-size: 14px; font-family: inherit;
+    width: 100%; padding: 11px 13px; border: 1.5px solid #e4e4e7; border-radius: 10px;
+    font-size: 14px; font-family: inherit; transition: border-color .15s, box-shadow .15s;
+    background: #fafafa;
   }
-  textarea { min-height: 110px; resize: vertical; }
-  small { color: #888; }
-  button {
-    margin-top: 22px; width: 100%; padding: 13px; border: none; border-radius: 8px;
-    background: #2563eb; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,.18); background: #fff;
   }
-  button:disabled { background: #9db5ec; cursor: not-allowed; }
-  #msg { margin-top: 14px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
-  #msg.ok { background: #e6f7ee; color: #157347; display: block; }
-  #msg.err { background: #fde8e8; color: #b42318; display: block; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .chip { background: #eef2ff; color: #3730a3; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+  textarea { min-height: 100px; resize: vertical; }
+  small { color: #8b8b93; display:block; margin-top: 6px; font-size: 12.5px; }
+  .filerow {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .filebtn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f4f0ff; color: #6d28d9; border: 1.5px dashed #c4b5fd;
+    padding: 9px 14px; border-radius: 10px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+  }
+  .filebtn:hover { background: #ece4ff; }
+  #fileInput { display: none; }
+  #fileStatus { font-size: 12.5px; color: #16a34a; font-weight: 600; }
+  button[type=submit] {
+    margin-top: 26px; width: 100%; padding: 15px; border: none; border-radius: 12px;
+    background: linear-gradient(90deg,#6d28d9,#db2777); color: #fff; font-size: 15.5px; font-weight: 800;
+    cursor: pointer; letter-spacing: .2px; transition: transform .12s, box-shadow .12s;
+    box-shadow: 0 6px 18px rgba(109,40,217,.28);
+  }
+  button[type=submit]:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(109,40,217,.35); }
+  button[type=submit]:disabled { background: #c9c3db; cursor: not-allowed; box-shadow: none; transform: none; }
+  #msg { margin-top: 16px; font-size: 14px; padding: 14px 16px; border-radius: 12px; display: none; line-height: 1.55; }
+  #msg.ok { background: #ecfdf5; color: #065f46; display: block; border: 1px solid #a7f3d0; }
+  #msg.err { background: #fef2f2; color: #991b1b; display: block; border: 1px solid #fecaca; }
+  #msg .resumen-title { font-weight: 800; margin-bottom: 4px; display:block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .chip {
+    background: #d1fae5; color: #065f46; padding: 5px 12px; border-radius: 999px; font-size: 12.5px;
+    font-weight: 600; display:inline-flex; align-items:center; gap:4px;
+  }
+  .chip.suggested {
+    background: #fffbeb; color: #92400e; border: 1.5px dashed #fbbf24; cursor: pointer;
+    user-select: none; transition: all .15s;
+  }
+  .chip.suggested:hover { background: #fef3c7; }
+  .chip.suggested.confirmed {
+    background: #d1fae5; color: #065f46; border: 1.5px solid #6ee7b7;
+  }
+  .chip.lang { background: #dbeafe; color: #1e3a8a; }
+  .chiplabel { font-size: 12px; color: #a1a1aa; margin-top: 10px; font-weight: 600; }
+  .langgrid, .modegrid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .pill {
+    padding: 8px 14px; border-radius: 999px; border: 1.5px solid #e4e4e7; background: #fafafa;
+    font-size: 13px; cursor: pointer; user-select: none; transition: all .15s; font-weight: 600; color: #52525b;
+  }
+  .pill.active.lang-active { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+  .pill.active.mode-active { background: #fce7f3; border-color: #f9a8d4; color: #9d174d; }
+  .footer-note { text-align:center; font-size:12px; color:#a1a1aa; margin-top:18px; }
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>Alertas de empleo junior / trainee</h1>
-  <p class="sub">Anotate una vez. Cada 5 horas revisamos portales de empleo y te
-     mandamos por mail las ofertas que matchean con tu perfil.</p>
+  <h1>🔎 Alertas de empleo junior / trainee</h1>
+  <p class="sub">Anotate una vez. Cada 5 horas revisamos portales de empleo de todo el mundo y te
+     mandamos por mail las ofertas junior/trainee que matchean con tu perfil, tus idiomas y dónde querés trabajar.</p>
 
   <form id="form">
-    <label>Tu email</label>
-    <input type="email" id="email" required placeholder="vos@ejemplo.com">
+    <div class="step s1">
+      <label><span class="stepnum">1</span>Tu email</label>
+      <input type="email" id="email" required placeholder="vos@ejemplo.com">
+    </div>
 
-    <label>Area / rol que buscas</label>
-    <select id="area">
-      <option value="programacion">Programacion / IT</option>
-      <option value="diseno">Diseno</option>
-      <option value="marketing">Marketing</option>
-      <option value="datos">Datos</option>
-      <option value="administracion">Administracion</option>
-      <option value="otro">Otro</option>
-    </select>
+    <div class="step s2">
+      <label><span class="stepnum">2</span>Área / rol que buscás</label>
+      <select id="area">
+        <option value="programacion">Programación / IT</option>
+        <option value="diseno">Diseño</option>
+        <option value="marketing">Marketing</option>
+        <option value="datos">Datos</option>
+        <option value="administracion">Administración</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
 
-    <label>Palabras clave (separadas por coma)</label>
-    <input type="text" id="keywords" placeholder="python, react, remoto, ventas">
-    <small>Se usan para filtrar que avisos son relevantes para vos.</small>
+    <div class="step s3">
+      <label><span class="stepnum">3</span>Palabras clave (separadas por coma)</label>
+      <input type="text" id="keywords" placeholder="python, react, remoto, ventas">
+      <small>Se usan para filtrar qué avisos son relevantes para vos.</small>
+    </div>
 
-    <label>Pega el texto de tu CV (opcional, mejora el match)</label>
-    <textarea id="cv" placeholder="Pega aca el contenido de tu CV (podes copiarlo desde el PDF/Word)"></textarea>
-    <div class="chips" id="skillsPreview"></div>
+    <div class="step s4">
+      <label><span class="stepnum">4</span>Tu CV</label>
+      <div class="filerow">
+        <label class="filebtn" for="fileInput">📎 Subir CV (PDF, Word o TXT)</label>
+        <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt">
+        <span id="fileStatus"></span>
+      </div>
+      <textarea id="cv" placeholder="...o pegá acá directamente el texto de tu CV"></textarea>
+      <div class="chiplabel" id="detectedLabel" style="display:none">✅ Habilidades detectadas en tu CV</div>
+      <div class="chips" id="skillsPreview"></div>
+      <div class="chiplabel" id="suggestedLabel" style="display:none">💡 Quizás también sepas esto (tocá para sumarlo)</div>
+      <div class="chips" id="suggestedPreview"></div>
+    </div>
+
+    <div class="step s5">
+      <label><span class="stepnum">5</span>¿Qué idiomas hablás?</label>
+      <small style="margin-top:0;margin-bottom:8px">Buscamos en portales de todo el mundo — esto define en qué países tenés más chances.</small>
+      <div class="langgrid" id="langGrid"></div>
+    </div>
+
+    <div class="step s6">
+      <label><span class="stepnum">6</span>¿Dónde y cómo querés trabajar?</label>
+      <div class="modegrid" id="modeGrid"></div>
+      <input type="text" id="country" placeholder="Tu país (ej: Argentina) — opcional, mejora el match" style="margin-top:10px">
+    </div>
 
     <button type="submit" id="btn">Anotarme</button>
     <div id="msg"></div>
   </form>
+  <p class="footer-note">Tus datos solo se usan para buscarte trabajo. Nadie más puede ver tu perfil.</p>
 </div>
 
 <script>
+// ⚠️ ÚNICO lugar que tenés que editar antes de publicar el sitio:
+// pegá acá la URL y la ANON KEY de tu proyecto de Supabase
+// (Supabase > Settings > API). La ANON KEY es pública a propósito,
+// solo permite "insertar", nunca leer datos de otros usuarios.
 const SUPABASE_URL = "https://xutlopwenmspcougvtsv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dGxvcHdlbm1zcGNvdWd2dHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Mzc2NTEsImV4cCI6MjEwMjQxMzY1MX0.s7mavW51sTjCupiq6LkbHT1YSpp0dakDsm5FS0HgL48";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+}
+
+// ---------- Habilidades: detección + sugerencias relacionadas ----------
 const SKILLS = [
   "python","javascript","typescript","java","react","node","sql","excel",
   "power bi","figma","photoshop","illustrator","marketing digital","seo",
   "redes sociales","atencion al cliente","ventas","contabilidad","ingles",
-  "html","css","git","aws","django","flask","wordpress","canva","office",
-  "administracion","logistica","recursos humanos","comunicacion"
+  "html","css","git","github","aws","docker","linux","django","flask",
+  "wordpress","canva","office","administracion","logistica",
+  "recursos humanos","comunicacion","excel avanzado","sap","tableau",
+  "google analytics","google ads","email marketing","crm","negociacion",
+  "ui/ux","prototipado","diseno grafico","sass","api rest","express",
+  "spring","google sheets","community management","reclutamiento",
+  "supply chain","impuestos"
 ];
+
+const SKILL_RELATED = {
+  "python": ["django","flask","sql","api rest","git"],
+  "javascript": ["typescript","react","node","html","css"],
+  "typescript": ["javascript","react","node"],
+  "java": ["spring","sql","api rest"],
+  "react": ["javascript","node","git"],
+  "node": ["javascript","express","api rest","sql"],
+  "sql": ["excel","power bi","python"],
+  "excel": ["power bi","sql","google sheets"],
+  "power bi": ["excel","sql","tableau"],
+  "figma": ["photoshop","illustrator","ui/ux","prototipado"],
+  "photoshop": ["illustrator","figma","diseno grafico"],
+  "illustrator": ["photoshop","figma","diseno grafico"],
+  "marketing digital": ["seo","redes sociales","google ads","email marketing"],
+  "seo": ["marketing digital","google analytics"],
+  "redes sociales": ["marketing digital","community management","canva"],
+  "atencion al cliente": ["ventas","comunicacion","crm"],
+  "ventas": ["atencion al cliente","crm","negociacion"],
+  "contabilidad": ["excel","administracion","impuestos"],
+  "ingles": ["comunicacion","atencion al cliente"],
+  "html": ["css","javascript"],
+  "css": ["html","javascript","sass"],
+  "git": ["github","linux"],
+  "aws": ["docker","linux"],
+  "django": ["python","sql","api rest"],
+  "flask": ["python","sql","api rest"],
+  "wordpress": ["seo","html","css"],
+  "canva": ["diseno grafico","redes sociales"],
+  "office": ["excel","administracion"],
+  "administracion": ["excel","office","atencion al cliente"],
+  "logistica": ["administracion","excel","supply chain"],
+  "recursos humanos": ["administracion","comunicacion","reclutamiento"],
+  "comunicacion": ["redes sociales","atencion al cliente","marketing digital"]
+};
 
 function detectarSkills(texto) {
   const t = texto.toLowerCase();
   return SKILLS.filter(s => t.includes(s));
 }
 
+function sugerirRelacionadas(detectadas) {
+  const set = new Set();
+  detectadas.forEach(s => (SKILL_RELATED[s] || []).forEach(r => {
+    if (!detectadas.includes(r)) set.add(r);
+  }));
+  return Array.from(set).slice(0, 8);
+}
+
 const cvBox = document.getElementById("cv");
 const preview = document.getElementById("skillsPreview");
-cvBox.addEventListener("input", () => {
-  const found = detectarSkills(cvBox.value);
-  preview.innerHTML = found.map(s => `<span class="chip">${s}</span>`).join("");
+const suggestedPreview = document.getElementById("suggestedPreview");
+const detectedLabel = document.getElementById("detectedLabel");
+const suggestedLabel = document.getElementById("suggestedLabel");
+const confirmedExtra = new Set();
+
+function renderSkills() {
+  const detectadas = detectarSkills(cvBox.value);
+  detectedLabel.style.display = detectadas.length ? "block" : "none";
+  preview.innerHTML = detectadas.map(s => `<span class="chip">✓ ${s}</span>`).join("");
+
+  const sugeridas = sugerirRelacionadas(detectadas);
+  suggestedLabel.style.display = sugeridas.length ? "block" : "none";
+  suggestedPreview.innerHTML = sugeridas.map(s => {
+    const on = confirmedExtra.has(s);
+    return `<span class="chip suggested ${on ? "confirmed" : ""}" data-skill="${s}">${on ? "✓ " : "+ "}${s}</span>`;
+  }).join("");
+  return detectadas;
+}
+
+suggestedPreview.addEventListener("click", (e) => {
+  const el = e.target.closest(".chip.suggested");
+  if (!el) return;
+  const s = el.dataset.skill;
+  if (confirmedExtra.has(s)) confirmedExtra.delete(s); else confirmedExtra.add(s);
+  renderSkills();
 });
 
+cvBox.addEventListener("input", renderSkills);
+
+// ---------- Subir CV (PDF / Word / TXT) y extraer texto automáticamente ----------
+const fileInput = document.getElementById("fileInput");
+const fileStatus = document.getElementById("fileStatus");
+
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  fileStatus.style.color = "#6d28d9";
+  fileStatus.textContent = "Leyendo " + file.name + "...";
+  try {
+    let texto = "";
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".pdf")) {
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      const partes = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        partes.push(content.items.map(it => it.str).join(" "));
+      }
+      texto = partes.join("\n");
+    } else if (name.endsWith(".docx")) {
+      const buf = await file.arrayBuffer();
+      const res = await mammoth.extractRawText({ arrayBuffer: buf });
+      texto = res.value;
+    } else if (name.endsWith(".doc")) {
+      fileStatus.style.color = "#b45309";
+      fileStatus.textContent = "⚠️ .doc viejo no se puede leer automáticamente — probá guardarlo como .docx o pegá el texto abajo";
+      return;
+    } else {
+      texto = await file.text();
+    }
+    cvBox.value = texto.trim();
+    renderSkills();
+    fileStatus.style.color = "#16a34a";
+    fileStatus.textContent = "✅ CV leído (" + texto.trim().split(/\s+/).length + " palabras) — revisalo abajo";
+  } catch (err) {
+    fileStatus.style.color = "#b91c1c";
+    fileStatus.textContent = "No pudimos leer el archivo, pegá el texto manualmente.";
+  }
+});
+
+// ---------- Idiomas ----------
+const LANGUAGES = [
+  { code: "es", label: "Español" },
+  { code: "en", label: "Inglés" },
+  { code: "pt", label: "Portugués" },
+  { code: "fr", label: "Francés" },
+  { code: "de", label: "Alemán" },
+  { code: "it", label: "Italiano" }
+];
+const LANG_REGIONS = {
+  es: "España y toda Latinoamérica",
+  en: "prácticamente todo el mundo (USA, UK, Canadá, Australia, Europa, India y más — el idioma más pedido en trabajo remoto)",
+  pt: "Brasil y Portugal",
+  fr: "Francia, Bélgica, Canadá (Québec) y África francófona",
+  de: "Alemania, Austria y Suiza",
+  it: "Italia"
+};
+const selectedLangs = new Set(["es"]);
+const langGrid = document.getElementById("langGrid");
+LANGUAGES.forEach(l => {
+  const el = document.createElement("span");
+  el.className = "pill" + (selectedLangs.has(l.code) ? " active lang-active" : "");
+  el.textContent = l.label;
+  el.dataset.code = l.code;
+  el.addEventListener("click", () => {
+    if (selectedLangs.has(l.code)) selectedLangs.delete(l.code); else selectedLangs.add(l.code);
+    el.classList.toggle("active");
+    el.classList.toggle("lang-active");
+  });
+  langGrid.appendChild(el);
+});
+
+// ---------- Modalidad / dónde trabajar ----------
+const MODES = [
+  { code: "remoto_mundial", label: "🌍 Remoto, cualquier país" },
+  { code: "remoto_pais", label: "🏠 Remoto en mi país" },
+  { code: "presencial", label: "🏢 Presencial en mi país" },
+  { code: "cualquiera", label: "🤷 Cualquiera de todas" }
+];
+let selectedMode = "remoto_mundial";
+const modeGrid = document.getElementById("modeGrid");
+MODES.forEach(m => {
+  const el = document.createElement("span");
+  el.className = "pill" + (m.code === selectedMode ? " active mode-active" : "");
+  el.textContent = m.label;
+  el.dataset.code = m.code;
+  el.addEventListener("click", () => {
+    selectedMode = m.code;
+    [...modeGrid.children].forEach(c => c.classList.remove("active", "mode-active"));
+    el.classList.add("active", "mode-active");
+  });
+  modeGrid.appendChild(el);
+});
+
+// ---------- Envío ----------
 document.getElementById("form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = document.getElementById("btn");
@@ -108,14 +382,20 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   const keywords = document.getElementById("keywords").value
     .split(",").map(k => k.trim()).filter(Boolean);
   const cvText = cvBox.value.trim();
-  const skills = detectarSkills(cvText);
+  const detectadas = detectarSkills(cvText);
+  const skills = Array.from(new Set([...detectadas, ...confirmedExtra]));
+  const languages = Array.from(selectedLangs);
+  const country = document.getElementById("country").value.trim();
 
   const { error } = await sb.from("users").insert({
     email,
     keywords,
     skills,
     areas: [area],
-    cv_text: cvText || null
+    cv_text: cvText || null,
+    languages,
+    work_mode: selectedMode,
+    country: country || null
   });
 
   btn.disabled = false;
@@ -124,14 +404,46 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   if (error) {
     msg.className = "err";
     msg.textContent = error.message.includes("duplicate")
-      ? "Ese email ya esta anotado. Vas a seguir recibiendo alertas."
-      : "Ocurrio un error: " + error.message;
-  } else {
-    msg.className = "ok";
-    msg.textContent = "Listo! Te vamos a escribir a " + email + " cuando encontremos ofertas para vos.";
-    e.target.reset();
-    preview.innerHTML = "";
+      ? "Ese email ya está anotado. Vas a seguir recibiendo alertas."
+      : "Ocurrió un error: " + error.message;
+    return;
   }
+
+  const regiones = languages.length
+    ? languages.map(l => LANG_REGIONS[l] || l).join("; ")
+    : LANG_REGIONS.en;
+  const modoTexto = {
+    remoto_mundial: "remotas de cualquier país",
+    remoto_pais: "remotas dentro de tu país",
+    presencial: "presenciales en tu país",
+    cualquiera: "remotas o presenciales, sin restricción"
+  }[selectedMode];
+
+  msg.className = "ok";
+  msg.innerHTML =
+    `<span class="resumen-title">¡Listo! Te vamos a escribir a ${email}</span>` +
+    `Vamos a buscarte ofertas ${modoTexto}` +
+    (skills.length ? ` que matcheen con: <b>${skills.join(", ")}</b>.` : ".") +
+    ` Por los idiomas que hablás, tenés alcance en: ${regiones}.` +
+    ` Revisá tu correo cada tanto (y spam la primera vez) — el robot corre cada 5 horas.`;
+
+  e.target.reset();
+  preview.innerHTML = "";
+  suggestedPreview.innerHTML = "";
+  detectedLabel.style.display = "none";
+  suggestedLabel.style.display = "none";
+  fileStatus.textContent = "";
+  confirmedExtra.clear();
+  selectedLangs.clear(); selectedLangs.add("es");
+  [...langGrid.children].forEach(c => {
+    c.classList.toggle("active", c.dataset.code === "es");
+    c.classList.toggle("lang-active", c.dataset.code === "es");
+  });
+  selectedMode = "remoto_mundial";
+  [...modeGrid.children].forEach(c => {
+    c.classList.toggle("active", c.dataset.code === "remoto_mundial");
+    c.classList.toggle("mode-active", c.dataset.code === "remoto_mundial");
+  });
 });
 </script>
 </body>
