@@ -28,7 +28,7 @@ SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 BREVO_API_KEY = os.environ["BREVO_API_KEY"]
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "alertas@example.com")
 SENDER_NAME = os.environ.get("SENDER_NAME", "Alertas de Empleo")
-TRACKER_URL = "https://kxl100rx.github.io/empleo/recursos/tracker-busqueda-laboral.xlsx"
+TRACKER_URL = "https://kxl100rx.github.io/trabajoya/recursos/tracker-busqueda-laboral.xlsx"
 
 HEADERS = {
     "apikey": SUPABASE_SERVICE_KEY,
@@ -443,7 +443,7 @@ def send_coaching_email(email, diag):
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
       <h2 style="background:linear-gradient(90deg,#6d28d9,#db2777);-webkit-background-clip:text;background-clip:text;color:transparent">📊 Tu diagnóstico de búsqueda</h2>
       <p style="color:#444;font-size:14px">Esto se arma solo con lo que fuiste cargando en
-      <a href="https://kxl100rx.github.io/empleo/seguimiento.html" style="color:#2563eb">Registrar seguimiento</a>.</p>
+      <a href="https://kxl100rx.github.io/trabajoya/seguimiento.html" style="color:#2563eb">Registrar seguimiento</a>.</p>
 
       <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px">
         <tr><td style="padding:6px 0;color:#666">Postulaciones registradas</td><td style="padding:6px 0;font-weight:bold;text-align:right">{diag['total']}</td></tr>
@@ -457,7 +457,7 @@ def send_coaching_email(email, diag):
       <ul style="font-size:13.5px;color:#333;padding-left:20px">{insights_html if insights_html else "<li>Seguí cargando postulaciones para que podamos darte recomendaciones más precisas.</li>"}</ul>
 
       <p style="color:#999;font-size:12px;margin-top:20px">
-        Seguí registrando resultados en <a href="https://kxl100rx.github.io/empleo/seguimiento.html" style="color:#999">seguimiento.html</a> —
+        Seguí registrando resultados en <a href="https://kxl100rx.github.io/trabajoya/seguimiento.html" style="color:#999">seguimiento.html</a> —
         cuantos más datos caes, más preciso es este diagnóstico.
       </p>
     </div>"""
