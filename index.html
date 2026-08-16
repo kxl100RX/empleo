@@ -484,13 +484,22 @@ function renderSeniority() {
 // ---------- Email: autocompletado desde el CV ----------
 const emailEl = document.getElementById("email");
 const emailAutoHint = document.getElementById("emailAutoHint");
-emailEl.addEventListener("input", () => { emailAutoHint.style.display = "none"; });
+let emailAutoFilled = false;
+emailEl.addEventListener("input", () => {
+  // el usuario está tipeando/corrigiendo a mano: dejamos de pisarlo
+  emailAutoFilled = false;
+  emailAutoHint.style.display = "none";
+});
 
 function autocompletarEmail() {
-  if (emailEl.value.trim()) return; // no pisamos lo que el usuario ya escribió
+  // si el usuario ya escribió su propio email a mano, no lo tocamos.
+  // si el valor actual vino de una auto-detección previa, lo seguimos
+  // refinando a medida que se termina de pegar/tipear el CV.
+  if (emailEl.value.trim() && !emailAutoFilled) return;
   const detectado = sugerirEmail(cvBox.value);
   if (detectado) {
     emailEl.value = detectado;
+    emailAutoFilled = true;
     emailAutoHint.style.display = "block";
   }
 }
