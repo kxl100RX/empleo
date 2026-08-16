@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>trabajoya Premium — automatizá tu búsqueda</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    margin: 0; padding: 24px;
+    display: flex; justify-content: center;
+    background: linear-gradient(135deg, #eef2ff 0%, #fdf2f8 45%, #ecfeff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 760px; width: 100%; }
+  .card {
+    background: #fff; width: 100%;
+    padding: 34px 36px 28px; border-radius: 18px;
+    box-shadow: 0 10px 40px rgba(76,29,149,.10), 0 2px 8px rgba(0,0,0,.04);
+    border: 1px solid #f0eefc; margin-bottom: 20px;
+  }
+  h1 {
+    font-size: 26px; margin: 0 0 6px;
+    background: linear-gradient(90deg,#6d28d9,#db2777 60%,#2563eb);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-weight: 800;
+  }
+  h2 { font-size: 18px; margin: 0 0 10px; color: #27272a; }
+  p.sub { color: #666; margin-top: 0; margin-bottom: 18px; font-size: 14px; line-height: 1.6; }
+  .backlink { display: inline-block; margin-bottom: 14px; font-size: 12.5px; color: #8b5cf6; font-weight: 700; text-decoration: none; }
+  .backlink:hover { text-decoration: underline; }
+  .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 8px; }
+  @media (max-width: 620px) { .plans { grid-template-columns: 1fr; } }
+  .plan {
+    border: 1.5px solid #e4e4e7; border-radius: 14px; padding: 18px;
+    text-align: center; background: #fafafa;
+  }
+  .plan .price { font-size: 28px; font-weight: 800; color: #18181b; margin: 6px 0; }
+  .plan .price small { font-size: 13px; font-weight: 500; color: #71717a; }
+  .plan button, .plan a.btn {
+    display: inline-block; margin-top: 10px; width: 100%; padding: 12px; border: none; border-radius: 10px;
+    background: linear-gradient(90deg,#6d28d9,#db2777); color: #fff; font-size: 14.5px; font-weight: 800;
+    cursor: pointer; text-decoration: none; box-shadow: 0 6px 18px rgba(109,40,217,.28);
+  }
+  .plan button:disabled { background: #c9c3db; cursor: not-allowed; box-shadow: none; }
+  label { display: block; font-weight: 700; margin: 10px 0 6px; font-size: 13.5px; color: #27272a; }
+  input[type=email], input[type=text], textarea {
+    width: 100%; padding: 11px 13px; border: 1.5px solid #e4e4e7; border-radius: 10px;
+    font-size: 14px; font-family: inherit; background: #fafafa; margin-bottom: 8px;
+  }
+  textarea { min-height: 90px; resize: vertical; }
+  #msg { margin-top: 14px; font-size: 13.5px; padding: 12px 14px; border-radius: 10px; display: none; line-height: 1.5; }
+  #msg.ok { background: #ecfdf5; color: #065f46; display: block; border: 1px solid #a7f3d0; }
+  #msg.err { background: #fef2f2; color: #991b1b; display: block; border: 1px solid #fecaca; }
+  #msg.info { background: #eff6ff; color: #1e40af; display: block; border: 1px solid #bfdbfe; }
+  .feature { display: none; }
+  .feature.active { display: block; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .tab {
+    padding: 9px 14px; border-radius: 999px; border: 1.5px solid #e4e4e7; background: #fff;
+    font-size: 13px; font-weight: 700; color: #52525b; cursor: pointer;
+  }
+  .tab.active { background: linear-gradient(90deg,#6d28d9,#db2777); color: #fff; border-color: transparent; }
+  .result-box {
+    background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 12px; padding: 16px 18px;
+    font-size: 14px; color: #27272a; line-height: 1.6; white-space: pre-wrap; margin-top: 14px; display: none;
+  }
+  .lockbox {
+    background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 14px 16px;
+    font-size: 13.5px; color: #92400e; margin-bottom: 10px;
+  }
+  button.action {
+    padding: 12px 18px; border: none; border-radius: 10px;
+    background: linear-gradient(90deg,#6d28d9,#db2777); color: #fff; font-size: 14px; font-weight: 800;
+    cursor: pointer; box-shadow: 0 6px 18px rgba(109,40,217,.28);
+  }
+  button.action:disabled { background: #c9c3db; cursor: not-allowed; box-shadow: none; }
+  #themeToggle {
+    position: fixed; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%;
+    border: 1.5px solid #e4e4e7; background: #fff; cursor: pointer; font-size: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08); z-index: 999; display: flex; align-items: center; justify-content: center;
+  }
+  #themeToggle:hover { background: #f4f0ff; }
+  body.dark-mode { background: linear-gradient(135deg, #1b1730 0%, #241726 45%, #0f2028 100%); background-attachment: fixed; }
+  body.dark-mode .card { background: #191524; border-color: #2e2640; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+  body.dark-mode p.sub, body.dark-mode label { color: #a39cc0; }
+  body.dark-mode h2 { color: #ece7f7; }
+  body.dark-mode input, body.dark-mode textarea { background: #241f36; border-color: #3a3252; color: #ece7f7; }
+  body.dark-mode .plan { background: #1c1830; border-color: #302a48; }
+  body.dark-mode .plan .price { color: #ece7f7; }
+  body.dark-mode .tab { background: #1c1830; border-color: #302a48; color: #c4b5fd; }
+  body.dark-mode .result-box { background: #201a30; border-color: #3a2f56; color: #ece7f7; }
+  body.dark-mode .lockbox { background: #2a1f0f; border-color: #78350f; color: #fde68a; }
+  body.dark-mode #themeToggle { background: #191524; border-color: #3a3252; color: #ece7f7; }
+</style>
+</head>
+<body>
+<script>
+(function(){
+  var saved = localStorage.getItem("trabajoya-theme");
+  var wantsDark = saved === "dark" || (!saved && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  if (wantsDark) document.body.classList.add("dark-mode");
+})();
+</script>
+<button id="themeToggle" type="button" aria-label="Cambiar modo claro/oscuro" title="Modo claro/oscuro">🌙</button>
+<div class="wrap">
+  <div class="card">
+    <a class="backlink" href="index.html">← Volver a las alertas</a>
+    <h1>⚡ trabajoya Premium</h1>
+    <p class="sub">Las alertas y el kit de búsqueda siguen siendo 100% gratis, para siempre. Premium suma
+      herramientas de inteligencia artificial que hacen el trabajo pesado por vos: analizar tu CV contra cada
+      oferta, escribirte la carta de presentación, simular una entrevista y armarte un diagnóstico profundo.</p>
+
+    <label>Tu email <span style="color:#a78bfa;font-weight:600">(el mismo con el que te anotaste a las alertas)</span></label>
+    <input type="email" id="email" placeholder="vos@ejemplo.com">
+
+    <div class="plans">
+      <div class="plan">
+        <div>🇦🇷 Argentina</div>
+        <div class="price">$8.000<small> ARS / mes</small></div>
+        <button id="btnAR">Pagar con Mercado Pago</button>
+      </div>
+      <div class="plan">
+        <div>🌎 Resto del mundo</div>
+        <div class="price">US$8<small> / mes</small></div>
+        <button id="btnIntl">Pagar en dólares/euros</button>
+      </div>
+    </div>
+    <div id="checkoutMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🛠️ Herramientas Premium</h2>
+    <p class="sub">Ingresá tu email de arriba y probá cualquiera de estas — si ya sos usuario premium, funcionan al toque.</p>
+
+    <div class="tabs">
+      <div class="tab active" data-f="cv">🎯 Match de CV</div>
+      <div class="tab" data-f="letter">✉️ Carta de presentación</div>
+      <div class="tab" data-f="interview">🎤 Simulador de entrevista</div>
+      <div class="tab" data-f="coaching">🧭 Diagnóstico profundo</div>
+    </div>
+
+    <div class="feature active" id="f-cv">
+      <label>Pegá el texto de la oferta a la que te querés postular</label>
+      <textarea id="ofertaCv" placeholder="Pegá acá la descripción del puesto..."></textarea>
+      <button class="action" data-action="cv_analysis" data-src="ofertaCv">Analizar match</button>
+    </div>
+
+    <div class="feature" id="f-letter">
+      <label>Pegá el texto de la oferta</label>
+      <textarea id="ofertaLetter" placeholder="Pegá acá la descripción del puesto..."></textarea>
+      <button class="action" data-action="cover_letter" data-src="ofertaLetter">Generar carta</button>
+    </div>
+
+    <div class="feature" id="f-interview">
+      <label>Rubro o puesto <span style="color:#a1a1aa;font-weight:500">(opcional, si no lo completás usamos tu perfil)</span></label>
+      <input type="text" id="rubroInterview" placeholder="Ej: Atención al cliente, Desarrollo web...">
+      <button class="action" data-action="interview_questions">Generar 5 preguntas</button>
+      <div id="interviewFollowup" style="display:none;margin-top:14px">
+        <label>Elegí una pregunta y escribí tu respuesta</label>
+        <input type="text" id="preguntaElegida" placeholder="Pegá acá la pregunta">
+        <textarea id="respuestaUsuario" placeholder="Tu respuesta..."></textarea>
+        <button class="action" data-action="interview_feedback">Pedir feedback</button>
+      </div>
+    </div>
+
+    <div class="feature" id="f-coaching">
+      <p class="sub" style="margin-top:0">Usa tu historial de postulaciones cargado en "Registrar seguimiento" y tu CV para armarte un diagnóstico y un plan de 3 pasos.</p>
+      <button class="action" data-action="deep_coaching">Generar diagnóstico</button>
+    </div>
+
+    <div class="result-box" id="resultBox"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://xutlopwenmspcougvtsv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dGxvcHdlbm1zcGNvdWd2dHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Mzc2NTEsImV4cCI6MjEwMjQxMzY1MX0.s7mavW51sTjCupiq6LkbHT1YSpp0dakDsm5FS0HgL48";
+const FN_BASE = SUPABASE_URL + "/functions/v1/";
+
+async function callFn(name, body) {
+  const r = await fetch(FN_BASE + name, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+      "apikey": SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, data };
+}
+
+function getEmail() {
+  const email = document.getElementById("email").value.trim();
+  return email;
+}
+
+// ---------- Checkout ----------
+document.getElementById("btnAR").addEventListener("click", async () => {
+  const email = getEmail();
+  const msg = document.getElementById("checkoutMsg");
+  if (!email) { msg.innerHTML = '<div id="msg2" class="err" style="display:block">Completá tu email primero.</div>'; return; }
+  msg.innerHTML = '<div class="info" style="display:block;padding:10px;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:13px">Generando el link de pago...</div>';
+  const { ok, data } = await callFn("mp-create-preference", { email });
+  if (ok && data.init_point) {
+    window.location.href = data.init_point;
+  } else {
+    msg.innerHTML = '<div style="display:block;padding:10px;border-radius:10px;background:#fef2f2;color:#991b1b;font-size:13px">' +
+      (data.error || "No se pudo generar el pago. Probá de nuevo en un rato.") + '</div>';
+  }
+});
+
+document.getElementById("btnIntl").addEventListener("click", async () => {
+  const email = getEmail();
+  const msg = document.getElementById("checkoutMsg");
+  if (!email) { msg.innerHTML = '<div class="err" style="display:block">Completá tu email primero.</div>'; return; }
+  msg.innerHTML = '<div style="display:block;padding:10px;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:13px">Generando el link de pago...</div>';
+  const { ok, data } = await callFn("ls-create-checkout", { email });
+  if (ok && data.url) {
+    window.location.href = data.url;
+  } else {
+    msg.innerHTML = '<div style="display:block;padding:10px;border-radius:10px;background:#fef2f2;color:#991b1b;font-size:13px">' +
+      (data.error || "No se pudo generar el pago. Probá de nuevo en un rato.") + '</div>';
+  }
+});
+
+// ---------- Tabs ----------
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+    document.querySelectorAll(".feature").forEach((f) => f.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("f-" + tab.dataset.f).classList.add("active");
+    document.getElementById("resultBox").style.display = "none";
+  });
+});
+
+// ---------- Acciones IA ----------
+document.querySelectorAll("button.action").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const email = getEmail();
+    const box = document.getElementById("resultBox");
+    if (!email) { box.style.display = "block"; box.textContent = "Completá tu email arriba primero."; return; }
+
+    const action = btn.dataset.action;
+    const payload = { email, action };
+    if (btn.dataset.src) payload.oferta_text = document.getElementById(btn.dataset.src).value.trim();
+    if (action === "interview_questions") payload.rubro = document.getElementById("rubroInterview").value.trim();
+    if (action === "interview_feedback") {
+      payload.pregunta = document.getElementById("preguntaElegida").value.trim();
+      payload.respuesta = document.getElementById("respuestaUsuario").value.trim();
+    }
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = "Pensando...";
+    box.style.display = "block";
+    box.textContent = "Un momento...";
+
+    const { ok, data } = await callFn("ai-premium", payload);
+
+    btn.disabled = false;
+    btn.textContent = original;
+
+    if (!ok) {
+      box.textContent = "⚠️ " + (data.error || "Hubo un error. Probá de nuevo.");
+      return;
+    }
+    box.textContent = data.result || "(sin respuesta)";
+    if (action === "interview_questions") {
+      document.getElementById("interviewFollowup").style.display = "block";
+    }
+  });
+});
+
+// ---------- Modo oscuro ----------
+const themeToggle = document.getElementById("themeToggle");
+function updateThemeIcon() {
+  themeToggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+}
+updateThemeIcon();
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("trabajoya-theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+  updateThemeIcon();
+});
+
+// si venimos de un pago exitoso, mostramos aviso
+if (new URLSearchParams(window.location.search).get("ok") === "1") {
+  const msg = document.getElementById("checkoutMsg");
+  msg.innerHTML = '<div style="display:block;padding:10px;border-radius:10px;background:#ecfdf5;color:#065f46;font-size:13px;margin-top:8px">✅ ¡Listo! Si el pago se acreditó, tu plan premium ya debería estar activo (puede tardar unos segundos).</div>';
+}
+</script>
+</body>
+</html>
