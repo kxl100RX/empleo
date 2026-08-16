@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alertas de empleo junior/trainee</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Arial, sans-serif;
+    background: #f6f7fb; margin: 0; padding: 24px;
+    display: flex; justify-content: center;
+  }
+  .card {
+    background: #fff; max-width: 560px; width: 100%;
+    padding: 32px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.sub { color: #666; margin-top: 0; margin-bottom: 24px; font-size: 14px; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; font-size: 14px; }
+  input[type=email], input[type=text], select, textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; font-family: inherit;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  small { color: #888; }
+  button {
+    margin-top: 22px; width: 100%; padding: 13px; border: none; border-radius: 8px;
+    background: #2563eb; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { background: #9db5ec; cursor: not-allowed; }
+  #msg { margin-top: 14px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #msg.ok { background: #e6f7ee; color: #157347; display: block; }
+  #msg.err { background: #fde8e8; color: #b42318; display: block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { background: #eef2ff; color: #3730a3; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Alertas de empleo junior / trainee</h1>
+  <p class="sub">Anotate una vez. Cada 5 horas revisamos portales de empleo y te
+     mandamos por mail las ofertas que matchean con tu perfil.</p>
+
+  <form id="form">
+    <label>Tu email</label>
+    <input type="email" id="email" required placeholder="vos@ejemplo.com">
+
+    <label>Area / rol que buscas</label>
+    <select id="area">
+      <option value="programacion">Programacion / IT</option>
+      <option value="diseno">Diseno</option>
+      <option value="marketing">Marketing</option>
+      <option value="datos">Datos</option>
+      <option value="administracion">Administracion</option>
+      <option value="otro">Otro</option>
+    </select>
+
+    <label>Palabras clave (separadas por coma)</label>
+    <input type="text" id="keywords" placeholder="python, react, remoto, ventas">
+    <small>Se usan para filtrar que avisos son relevantes para vos.</small>
+
+    <label>Pega el texto de tu CV (opcional, mejora el match)</label>
+    <textarea id="cv" placeholder="Pega aca el contenido de tu CV (podes copiarlo desde el PDF/Word)"></textarea>
+    <div class="chips" id="skillsPreview"></div>
+
+    <button type="submit" id="btn">Anotarme</button>
+    <div id="msg"></div>
+  </form>
+</div>
+
+<script>
+const SUPABASE_URL = "https://xutlopwenmspcougvtsv.supabase.co";
+const SUPABASE_ANON_KEY = "PEGA_ACA_TU_SUPABASE_ANON_KEY";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const SKILLS = [
+  "python","javascript","typescript","java","react","node","sql","excel",
+  "power bi","figma","photoshop","illustrator","marketing digital","seo",
+  "redes sociales","atencion al cliente","ventas","contabilidad","ingles",
+  "html","css","git","aws","django","flask","wordpress","canva","office",
+  "administracion","logistica","recursos humanos","comunicacion"
+];
+
+function detectarSkills(texto) {
+  const t = texto.toLowerCase();
+  return SKILLS.filter(s => t.includes(s));
+}
+
+const cvBox = document.getElementById("cv");
+const preview = document.getElementById("skillsPreview");
+cvBox.addEventListener("input", () => {
+  const found = detectarSkills(cvBox.value);
+  preview.innerHTML = found.map(s => `<span class="chip">${s}</span>`).join("");
+});
+
+document.getElementById("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("btn");
+  const msg = document.getElementById("msg");
+  btn.disabled = true;
+  btn.textContent = "Enviando...";
+
+  const email = document.getElementById("email").value.trim();
+  const area = document.getElementById("area").value;
+  const keywords = document.getElementById("keywords").value
+    .split(",").map(k => k.trim()).filter(Boolean);
+  const cvText = cvBox.value.trim();
+  const skills = detectarSkills(cvText);
+
+  const { error } = await sb.from("users").insert({
+    email,
+    keywords,
+    skills,
+    areas: [area],
+    cv_text: cvText || null
+  });
+
+  btn.disabled = false;
+  btn.textContent = "Anotarme";
+
+  if (error) {
+    msg.className = "err";
+    msg.textContent = error.message.includes("duplicate")
+      ? "Ese email ya esta anotado. Vas a seguir recibiendo alertas."
+      : "Ocurrio un error: " + error.message;
+  } else {
+    msg.className = "ok";
+    msg.textContent = "Listo! Te vamos a escribir a " + email + " cuando encontremos ofertas para vos.";
+    e.target.reset();
+    preview.innerHTML = "";
+  }
+});
+</script>
+</body>
+</html>
