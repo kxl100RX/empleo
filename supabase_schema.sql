@@ -54,3 +54,37 @@ create policy "cualquiera puede registrarse"
 -- anoten de ahora en más.
 alter table users add column if not exists kit_email_sent boolean not null default false;
 update users set kit_email_sent = true where kit_email_sent = false;
+
+-- ---------------------------------------------------------------------
+-- Seguimiento de postulaciones (para coaching dinámico por mail).
+-- El candidato carga cada resultado desde seguimiento.html; el robot
+-- (GitHub Actions, cada 5hs) lee esto con la service role key y le
+-- manda un diagnóstico actualizado por mail cuando hay novedades.
+-- ---------------------------------------------------------------------
+create table if not exists applications (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  empresa text,
+  puesto text,
+  portal text,
+  fecha_postulacion date,
+  estado text,
+  fecha_respuesta date,
+  motivo text,
+  notas text,
+  created_at timestamptz default now()
+);
+
+alter table applications enable row level security;
+
+drop policy if exists "cualquiera puede registrar su seguimiento" on applications;
+create policy "cualquiera puede registrar su seguimiento"
+  on applications for insert
+  to anon
+  with check (true);
+
+-- Sin política de SELECT para "anon": nadie puede leer el seguimiento de
+-- otra persona desde el navegador. Solo el script (service role key,
+-- nunca expuesta en el sitio) puede leerlo para generar el coaching.
+
+alter table users add column if not exists last_coaching_sent_at timestamptz;

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrar seguimiento — Alertas de Empleo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    margin: 0; padding: 24px;
+    display: flex; justify-content: center;
+    background: linear-gradient(135deg, #eef2ff 0%, #fdf2f8 45%, #ecfeff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .card {
+    background: #fff; max-width: 560px; width: 100%;
+    padding: 34px 36px 28px; border-radius: 18px;
+    box-shadow: 0 10px 40px rgba(76,29,149,.10), 0 2px 8px rgba(0,0,0,.04);
+    border: 1px solid #f0eefc;
+  }
+  h1 {
+    font-size: 23px; margin: 0 0 6px;
+    background: linear-gradient(90deg,#6d28d9,#db2777 60%,#2563eb);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-weight: 800;
+  }
+  p.sub { color: #666; margin-top: 0; margin-bottom: 22px; font-size: 14px; line-height: 1.5; }
+  label { display: block; font-weight: 700; margin: 14px 0 6px; font-size: 13.5px; color: #27272a; }
+  input[type=email], input[type=text], input[type=date], select, textarea {
+    width: 100%; padding: 11px 13px; border: 1.5px solid #e4e4e7; border-radius: 10px;
+    font-size: 14px; font-family: inherit; transition: border-color .15s, box-shadow .15s;
+    background: #fafafa;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,.18); background: #fff;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  small { color: #8b8b93; display:block; margin-top: 6px; font-size: 12.5px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button[type=submit] {
+    margin-top: 26px; width: 100%; padding: 15px; border: none; border-radius: 12px;
+    background: linear-gradient(90deg,#6d28d9,#db2777); color: #fff; font-size: 15.5px; font-weight: 800;
+    cursor: pointer; letter-spacing: .2px; transition: transform .12s, box-shadow .12s;
+    box-shadow: 0 6px 18px rgba(109,40,217,.28);
+  }
+  button[type=submit]:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(109,40,217,.35); }
+  button[type=submit]:disabled { background: #c9c3db; cursor: not-allowed; box-shadow: none; transform: none; }
+  #msg { margin-top: 16px; font-size: 14px; padding: 14px 16px; border-radius: 12px; display: none; line-height: 1.55; }
+  #msg.ok { background: #ecfdf5; color: #065f46; display: block; border: 1px solid #a7f3d0; }
+  #msg.err { background: #fef2f2; color: #991b1b; display: block; border: 1px solid #fecaca; }
+  .backlink { display: inline-block; margin-bottom: 14px; font-size: 12.5px; color: #8b5cf6; font-weight: 700; text-decoration: none; }
+  .backlink:hover { text-decoration: underline; }
+  .info-box {
+    background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 12px; padding: 12px 14px;
+    font-size: 12.5px; color: #4c1d95; line-height: 1.5; margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <a class="backlink" href="index.html">← Volver al formulario de alertas</a>
+  <h1>📊 Registrar seguimiento</h1>
+  <p class="sub">Cargá cada resultado de tus postulaciones acá (además o en vez de la planilla). Con esto el robot arma
+     tu diagnóstico y te manda coaching personalizado por mail, además de la planilla.</p>
+
+  <div class="info-box">
+    Nadie más puede ver esto — solo se usa para generarte a vos el diagnóstico. No hace falta crear cuenta ni
+    contraseña: identificamos tus registros por el mismo mail con el que te anotaste a las alertas.
+  </div>
+
+  <form id="form">
+    <label>Tu email <span style="color:#a78bfa;font-weight:600">(el mismo con el que te anotaste)</span></label>
+    <input type="email" id="email" required placeholder="vos@ejemplo.com">
+
+    <div class="row2">
+      <div>
+        <label>Empresa</label>
+        <input type="text" id="empresa" placeholder="Ejemplo S.A.">
+      </div>
+      <div>
+        <label>Puesto</label>
+        <input type="text" id="puesto" placeholder="Analista de Datos Jr.">
+      </div>
+    </div>
+
+    <div class="row2">
+      <label style="grid-column:1/-1;margin-bottom:0"></label>
+      <div>
+        <label>Portal / fuente</label>
+        <input type="text" id="portal" placeholder="LinkedIn, Computrabajo...">
+      </div>
+      <div>
+        <label>Estado</label>
+        <select id="estado">
+          <option value="Aplicado" selected>Aplicado</option>
+          <option value="En proceso">En proceso</option>
+          <option value="Entrevista">Entrevista</option>
+          <option value="Oferta recibida">Oferta recibida</option>
+          <option value="Rechazado">Rechazado</option>
+          <option value="Sin respuesta">Sin respuesta</option>
+          <option value="Descartado por mí">Descartado por mí</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label>Fecha de postulación</label>
+        <input type="date" id="fechaPostulacion">
+      </div>
+      <div>
+        <label>Fecha de respuesta <span style="color:#a1a1aa;font-weight:500">(si ya te respondieron)</span></label>
+        <input type="date" id="fechaRespuesta">
+      </div>
+    </div>
+
+    <label>Motivo <span style="color:#a1a1aa;font-weight:500">(si no avanzó — opcional)</span></label>
+    <select id="motivo">
+      <option value="">— Sin especificar —</option>
+      <option>Sin respuesta del reclutador</option>
+      <option>Búsqueda cerrada / pausada por la empresa</option>
+      <option>Requisito de experiencia no cumplido</option>
+      <option>Habilidad técnica faltante</option>
+      <option>Expectativa salarial no acorde</option>
+      <option>Otro candidato seleccionado</option>
+      <option>Entrevista no fue bien</option>
+      <option>No pasó el filtro CV / ATS</option>
+      <option>Proceso muy largo / desistí yo</option>
+      <option>Otro</option>
+    </select>
+
+    <label>Notas <span style="color:#a1a1aa;font-weight:500">(opcional)</span></label>
+    <textarea id="notas" placeholder="Cualquier detalle que quieras recordar..."></textarea>
+
+    <button type="submit" id="btn">Registrar</button>
+    <div id="msg"></div>
+  </form>
+  <p class="sub" style="margin-top:18px;margin-bottom:0;font-size:12px;text-align:center;color:#a1a1aa">
+    Cada vez que sumes novedades, tu próximo mail de alertas va a incluir un diagnóstico actualizado.
+  </p>
+</div>
+
+<script>
+const SUPABASE_URL = "https://xutlopwenmspcougvtsv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dGxvcHdlbm1zcGNvdWd2dHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Mzc2NTEsImV4cCI6MjEwMjQxMzY1MX0.s7mavW51sTjCupiq6LkbHT1YSpp0dakDsm5FS0HgL48";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.getElementById("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("btn");
+  const msg = document.getElementById("msg");
+  btn.disabled = true;
+  btn.textContent = "Guardando...";
+
+  const payload = {
+    email: document.getElementById("email").value.trim(),
+    empresa: document.getElementById("empresa").value.trim() || null,
+    puesto: document.getElementById("puesto").value.trim() || null,
+    portal: document.getElementById("portal").value.trim() || null,
+    estado: document.getElementById("estado").value || null,
+    fecha_postulacion: document.getElementById("fechaPostulacion").value || null,
+    fecha_respuesta: document.getElementById("fechaRespuesta").value || null,
+    motivo: document.getElementById("motivo").value || null,
+    notas: document.getElementById("notas").value.trim() || null,
+  };
+
+  const { error } = await sb.from("applications").insert(payload);
+
+  btn.disabled = false;
+  btn.textContent = "Registrar";
+
+  if (error) {
+    msg.className = "err";
+    msg.textContent = "Ocurrió un error: " + error.message;
+    return;
+  }
+
+  msg.className = "ok";
+  msg.innerHTML = "✅ Listo, quedó registrado. Seguí cargando cada novedad — tu próximo diagnóstico por mail se arma solo con esto.";
+  document.getElementById("empresa").value = "";
+  document.getElementById("puesto").value = "";
+  document.getElementById("portal").value = "";
+  document.getElementById("estado").value = "Aplicado";
+  document.getElementById("fechaPostulacion").value = "";
+  document.getElementById("fechaRespuesta").value = "";
+  document.getElementById("motivo").value = "";
+  document.getElementById("notas").value = "";
+});
+</script>
+</body>
+</html>
