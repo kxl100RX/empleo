@@ -47,3 +47,10 @@ create policy "cualquiera puede registrarse"
 -- El script automático (GitHub Actions) usa la "service role key",
 -- que se salta estas reglas por diseño y sí puede leer todo. Esa key
 -- NUNCA va en el sitio web, solo en los Secrets de GitHub.
+
+-- Kit de Búsqueda Laboral por mail (una sola vez por usuario nuevo).
+-- El backfill marca a TODOS los ya registrados como "ya enviado" para no
+-- mandarles de golpe un mail retroactivo — solo lo reciben los que se
+-- anoten de ahora en más.
+alter table users add column if not exists kit_email_sent boolean not null default false;
+update users set kit_email_sent = true where kit_email_sent = false;

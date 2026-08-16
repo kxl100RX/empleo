@@ -694,6 +694,14 @@ function generarBooleanSearch(areas, seniority, skills) {
   return [roleGroup, skillGroup, nivelGroup].filter(Boolean).join(" AND ") || "empleo";
 }
 
+function slugify(s) {
+  return (s || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function generarKit(areas, seniority, skills, country) {
   const cc = detectarCodigoPais(country) || "ar";
   const ubicacion = country || "";
@@ -703,7 +711,7 @@ function generarKit(areas, seniority, skills, country) {
   const qSimple = encodeURIComponent(simple);
   const qBoolean = encodeURIComponent(boolean);
   const qLoc = encodeURIComponent(ubicacion);
-  const slug = encodeURIComponent(primerTermino).replace(/%20/g, "-").toLowerCase();
+  const slug = slugify(primerTermino) || "empleo";
 
   const indeedHost = INDEED_DOMAINS[cc] || "www.indeed.com";
   const ctHost = COMPUTRABAJO_DOMAINS[cc] || "www.computrabajo.com";
