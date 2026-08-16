@@ -39,6 +39,7 @@
   .step.s5 { border-color: #d1fae5; }
   .step.s6 { border-color: #ffedd5; }
   .step.s7 { border-color: #ffe4e6; }
+  .step.s8 { border-color: #cffafe; }
   label { display: block; font-weight: 700; margin: 0 0 6px; font-size: 14px; color: #27272a; }
   .stepnum {
     display:inline-flex; align-items:center; justify-content:center;
@@ -67,6 +68,36 @@
   .filebtn:hover { background: #ece4ff; }
   #fileInput { display: none; }
   #fileStatus { font-size: 12.5px; color: #16a34a; font-weight: 600; }
+  .tplbtn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #eff6ff; color: #1d4ed8; border: 1.5px dashed #93c5fd;
+    padding: 9px 14px; border-radius: 10px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+  }
+  .tplbtn:hover { background: #dbeafe; }
+  .tplpanel {
+    display: none; margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .tplpanel.open { display: block; animation: fadein .2s ease; }
+  .tplpanel .tplitem {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid #e8eaf0; gap: 10px;
+  }
+  .tplpanel .tplitem:last-child { border-bottom: none; }
+  .tplitem .tplname { font-size: 13.5px; font-weight: 700; color: #27272a; }
+  .tplitem .tpldesc { font-size: 12px; color: #8b8b93; margin-top: 2px; }
+  .tpldownload {
+    background: #2563eb; color: #fff; border: none; padding: 7px 13px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; text-decoration: none;
+    transition: background .15s;
+  }
+  .tpldownload:hover { background: #1d4ed8; }
+  .skiplink {
+    display: inline-block; margin-top: 10px; font-size: 12.5px; color: #8b5cf6;
+    font-weight: 700; cursor: pointer; text-decoration: none;
+  }
+  .skiplink:hover { text-decoration: underline; }
   button[type=submit] {
     margin-top: 26px; width: 100%; padding: 15px; border: none; border-radius: 12px;
     background: linear-gradient(90deg,#6d28d9,#db2777); color: #fff; font-size: 15.5px; font-weight: 800;
@@ -122,6 +153,27 @@
   @keyframes fadein { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
   .hint { font-size: 12px; color: #a78bfa; font-weight: 600; margin-left: 6px; }
   .footer-note { text-align:center; font-size:12px; color:#a1a1aa; margin-top:18px; }
+  #revealSection { display: none; animation: fadein .25s ease; }
+  .auto-hint {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #16a34a;
+    font-weight: 700; margin-top: 6px;
+  }
+  .cv-cta {
+    background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 4px;
+  }
+  .tipspanel {
+    margin-top: 8px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .tipcard {
+    background: linear-gradient(135deg,#f0fdfa,#eff6ff); border: 1px solid #bae6fd;
+    border-radius: 12px; padding: 11px 14px; font-size: 13px; line-height: 1.5; color: #0c4a6e;
+    animation: fadein .2s ease;
+  }
+  .tipcard b { color: #075985; }
+  .tipcard.cert { background: linear-gradient(135deg,#fdf4ff,#fff1f2); border-color: #f5d0fe; color: #701a75; }
+  .tipcard.cert b { color: #86198f; }
+  .tipsempty { font-size: 12.5px; color: #a1a1aa; }
 </style>
 </head>
 <body>
@@ -132,91 +184,126 @@
      matchean con tu perfil, tu nivel, tus idiomas y dónde querés trabajar.</p>
 
   <form id="form">
+    <div class="step s7">
+      <label><span class="stepnum">1</span>¿Dónde y cómo querés trabajar? <span class="hint">(obligatorio)</span></label>
+      <small style="margin-top:0;margin-bottom:8px">Esto no lo podemos adivinar de tu CV — elegilo para que las alertas te sirvan de verdad.</small>
+      <div class="modegrid" id="modeGrid"></div>
+      <input type="text" id="country" placeholder="Tu país (ej: Argentina) — opcional, mejora el match" style="margin-top:10px">
+    </div>
+
     <div class="step s1">
-      <label><span class="stepnum">1</span>Tu CV <span class="hint">(empezá por acá — completamos el resto solos)</span></label>
-      <div class="filerow">
-        <label class="filebtn" for="fileInput">📎 Subir CV (PDF, Word o TXT)</label>
-        <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt">
+      <label><span class="stepnum">2</span>Tu CV <span class="hint">(subilo o pegalo — completamos el resto del formulario solos)</span></label>
+      <div class="cv-cta">
+        <div class="filerow">
+          <label class="filebtn" for="fileInput">📎 Subir CV (PDF, Word o TXT)</label>
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt">
+          <button type="button" class="tplbtn" id="tplToggle">📄 Plantillas de CV (ATS)</button>
+        </div>
         <span id="fileStatus"></span>
+        <div class="tplpanel" id="tplPanel">
+          <div class="tplitem">
+            <div>
+              <div class="tplname">Plantilla clásica</div>
+              <div class="tpldesc">Uso general, para cualquier rubro y nivel de experiencia.</div>
+            </div>
+            <a class="tpldownload" href="templates/plantilla-clasica.docx" download>Descargar</a>
+          </div>
+          <div class="tplitem">
+            <div>
+              <div class="tplname">Plantilla gerencial / senior</div>
+              <div class="tpldesc">Pensada para perfiles con experiencia liderando equipos.</div>
+            </div>
+            <a class="tpldownload" href="templates/plantilla-gerencial.docx" download>Descargar</a>
+          </div>
+          <div class="tplitem">
+            <div>
+              <div class="tplname">Primer empleo / sin experiencia</div>
+              <div class="tpldesc">Para estudiantes y recién egresados.</div>
+            </div>
+            <a class="tpldownload" href="templates/plantilla-primer-empleo.docx" download>Descargar</a>
+          </div>
+          <small style="margin-top:6px">Las 3 están armadas para pasar filtros ATS: sin tablas, columnas ni imágenes.</small>
+        </div>
+        <textarea id="cv" placeholder="...o pegá acá directamente el texto de tu CV. Lo analizamos para completarte el email, el rubro, el nivel, los idiomas y las habilidades — vos revisás y confirmás todo abajo."></textarea>
+        <a class="skiplink" id="skipCvLink">Prefiero completar los datos manualmente, sin CV →</a>
       </div>
-      <textarea id="cv" placeholder="...o pegá acá directamente el texto de tu CV. Lo analizamos para completarte el email, el rubro, el nivel, los idiomas y las habilidades — vos revisás y confirmás todo abajo."></textarea>
       <div class="chiplabel" id="detectedLabel" style="display:none">✅ Habilidades detectadas en tu CV</div>
       <div class="chips" id="skillsPreview"></div>
       <div class="chiplabel" id="suggestedLabel" style="display:none">💡 Quizás también sepas esto (tocá para sumarlo)</div>
       <div class="chips" id="suggestedPreview"></div>
     </div>
 
-    <div class="step s2">
-      <label><span class="stepnum">2</span>Tu email</label>
-      <input type="email" id="email" required placeholder="vos@ejemplo.com">
-      <small id="emailAutoHint" style="display:none;color:#16a34a;font-weight:600">✅ Lo tomamos de tu CV — revisalo y corregilo si hace falta</small>
+    <div id="revealSection">
+      <div class="step s2">
+        <label><span class="stepnum">3</span>Tu email</label>
+        <input type="email" id="email" required placeholder="vos@ejemplo.com">
+        <small id="emailAutoHint" style="display:none;color:#16a34a;font-weight:600">✅ Lo tomamos de tu CV — revisalo y corregilo si hace falta</small>
+      </div>
+
+      <div class="step s3">
+        <label><span class="stepnum">4</span>Rubro / área en la que buscás trabajo <span class="hint">(elegí uno o varios)</span></label>
+        <input type="text" id="areaInput" list="areaList" placeholder="Escribí un rubro y presioná Enter — ej: Programación, Salud, Ventas... podés sumar varios">
+        <datalist id="areaList">
+          <option value="Programación / IT">
+          <option value="Diseño">
+          <option value="Marketing">
+          <option value="Datos">
+          <option value="Administración">
+          <option value="Salud">
+          <option value="Educación">
+          <option value="Gastronomía">
+          <option value="Construcción">
+          <option value="Logística">
+          <option value="Ventas">
+          <option value="Atención al cliente">
+          <option value="Recursos Humanos">
+          <option value="Legal">
+          <option value="Finanzas">
+          <option value="Ingeniería">
+          <option value="Turismo">
+          <option value="Manufactura">
+          <option value="Agricultura">
+          <option value="Seguridad">
+        </datalist>
+        <div class="chips" id="areaChips"></div>
+        <div class="auto-hint" id="areaAutoHint" style="display:none">✅ Detectado en tu CV — sacá los que no apliquen</div>
+        <small>Cualquier rubro sirve — no está limitado a tecnología. Enter para agregar, tocá ✕ para quitar.</small>
+      </div>
+
+      <div class="step s4">
+        <label><span class="stepnum">5</span>Nivel de experiencia</label>
+        <select id="seniority">
+          <option value="cualquiera" selected>Cualquiera / no importa</option>
+          <option value="junior">Junior / Trainee / Sin experiencia</option>
+          <option value="semi_senior">Semi Senior</option>
+          <option value="senior">Senior</option>
+          <option value="gerencial">Gerencial / Directivo</option>
+        </select>
+        <div class="auto-hint" id="seniorityAutoHint" style="display:none">✅ Detectado en tu CV — cambialo si no es correcto</div>
+      </div>
+
+      <div class="step s5">
+        <label><span class="stepnum">6</span>Palabras clave (separadas por coma) <span class="hint">(opcional, sumá lo que quieras)</span></label>
+        <input type="text" id="keywords" placeholder="python, react, ventas, enfermería, contabilidad">
+        <small>Se usan para filtrar qué avisos son relevantes para vos.</small>
+      </div>
+
+      <div class="step s6">
+        <label><span class="stepnum">7</span>¿Qué idiomas hablás?</label>
+        <small style="margin-top:0;margin-bottom:8px">Buscamos en portales de todo el mundo — esto define en qué países tenés más chances.</small>
+        <div class="langgrid" id="langGrid"></div>
+        <div class="auto-hint" id="langAutoHint" style="display:none">✅ Detectado en tu CV</div>
+      </div>
+
+      <div class="step s8">
+        <label><span class="stepnum">8</span>Tips para tu perfil <span class="hint">(según tu rubro y nivel)</span></label>
+        <div class="tipspanel" id="tipsPanel">
+          <div class="tipsempty" id="tipsEmpty">Elegí al menos un rubro arriba para ver sugerencias de roles y certificaciones.</div>
+        </div>
+      </div>
     </div>
 
-    <div class="step s3">
-      <label><span class="stepnum">3</span>Rubro / área en la que buscás trabajo <span class="hint">(elegí uno o varios)</span></label>
-      <input type="text" id="areaInput" list="areaList" placeholder="Escribí un rubro y presioná Enter — ej: Programación, Salud, Ventas... podés sumar varios">
-      <datalist id="areaList">
-        <option value="Programación / IT">
-        <option value="Diseño">
-        <option value="Marketing">
-        <option value="Datos">
-        <option value="Administración">
-        <option value="Salud">
-        <option value="Educación">
-        <option value="Gastronomía">
-        <option value="Construcción">
-        <option value="Logística">
-        <option value="Ventas">
-        <option value="Atención al cliente">
-        <option value="Recursos Humanos">
-        <option value="Legal">
-        <option value="Finanzas">
-        <option value="Ingeniería">
-        <option value="Turismo">
-        <option value="Manufactura">
-        <option value="Agricultura">
-        <option value="Seguridad">
-      </datalist>
-      <div class="chips" id="areaChips"></div>
-      <div class="chiplabel" id="areaSuggestedLabel" style="display:none">💡 Detectamos esto en tu CV (tocá para sumarlo)</div>
-      <div class="chips" id="areaSuggestedPreview"></div>
-      <small>Cualquier rubro sirve — no está limitado a tecnología. Enter para agregar, tocá ✕ para quitar.</small>
-    </div>
-
-    <div class="step s4">
-      <label><span class="stepnum">4</span>Nivel de experiencia</label>
-      <select id="seniority">
-        <option value="cualquiera" selected>Cualquiera / no importa</option>
-        <option value="junior">Junior / Trainee / Sin experiencia</option>
-        <option value="semi_senior">Semi Senior</option>
-        <option value="senior">Senior</option>
-        <option value="gerencial">Gerencial / Directivo</option>
-      </select>
-      <div id="senioritySuggest" style="display:none"></div>
-    </div>
-
-    <div class="step s5">
-      <label><span class="stepnum">5</span>Palabras clave (separadas por coma) <span class="hint">(opcional, sumá lo que quieras)</span></label>
-      <input type="text" id="keywords" placeholder="python, react, ventas, enfermería, contabilidad">
-      <small>Se usan para filtrar qué avisos son relevantes para vos.</small>
-    </div>
-
-    <div class="step s6">
-      <label><span class="stepnum">6</span>¿Qué idiomas hablás?</label>
-      <small style="margin-top:0;margin-bottom:8px">Buscamos en portales de todo el mundo — esto define en qué países tenés más chances.</small>
-      <div class="langgrid" id="langGrid"></div>
-      <div class="chiplabel" id="langSuggestedLabel" style="display:none">💡 Detectamos esto en tu CV (tocá para sumarlo)</div>
-      <div class="chips" id="langSuggestedPreview"></div>
-    </div>
-
-    <div class="step s7">
-      <label><span class="stepnum">7</span>Confirmá dónde y cómo querés trabajar</label>
-      <small style="margin-top:0;margin-bottom:8px">Esto no lo adivinamos por vos — elegilo para que las alertas te sirvan de verdad.</small>
-      <div class="modegrid" id="modeGrid"></div>
-      <input type="text" id="country" placeholder="Tu país (ej: Argentina) — opcional, mejora el match" style="margin-top:10px">
-    </div>
-
-    <button type="submit" id="btn">Anotarme</button>
+    <button type="submit" id="btn" style="display:none">Anotarme</button>
     <div id="msg"></div>
   </form>
   <p class="footer-note">Tus datos solo se usan para buscarte trabajo. Nadie más puede ver tu perfil.</p>
@@ -299,7 +386,6 @@ function sugerirRelacionadas(detectadas) {
 }
 
 // ---------- Autocompletado desde el CV: rubro, nivel e idiomas ----------
-// Todo esto son SUGERENCIAS. Nada se agrega solo: el usuario toca para confirmar.
 const AREA_KEYWORDS = {
   "Programación / IT": ["programador","desarrollador","software","python","javascript","sql","frontend","backend","full stack","devops","sistemas"],
   "Diseño": ["diseño gráfico","diseñador","figma","photoshop","illustrator","ui/ux","ux/ui"],
@@ -377,6 +463,176 @@ function sugerirEmail(texto) {
   return m ? m[0] : null;
 }
 
+// ---------- Tips personalizados: roles adyacentes + certificaciones ----------
+const ROLE_MAP = {
+  "Programación / IT": {
+    baseRoles: ["Desarrollador/a", "Analista de Sistemas"],
+    bySkill: {
+      "aws": ["Cloud Engineer", "DevOps Engineer"],
+      "docker": ["DevOps Engineer", "SRE"],
+      "python": ["Data Engineer", "Backend Developer"],
+      "react": ["Frontend Developer", "Fullstack Developer"],
+      "sql": ["Data Analyst", "Backend Developer"]
+    },
+    certs: [
+      { name: "AWS Certified Cloud Practitioner", when: ["aws","docker","linux"] },
+      { name: "Microsoft Certified: Azure Fundamentals (AZ-900)", when: ["aws","docker"] },
+      { name: "Scrum Fundamentals Certified (SFC)", when: [] }
+    ]
+  },
+  "Ventas": {
+    baseRoles: ["Ejecutivo/a de Ventas", "Account Executive"],
+    bySkill: {
+      "sql": ["Preventa Técnica / Sales Engineer"],
+      "python": ["Preventa Técnica / Sales Engineer"],
+      "crm": ["Customer Success Manager"]
+    },
+    certs: [
+      { name: "HubSpot Sales Software Certification", when: ["crm","ventas"] },
+      { name: "Salesforce Certified Sales Representative", when: ["crm"] }
+    ]
+  },
+  "Marketing": {
+    baseRoles: ["Analista de Marketing Digital"],
+    bySkill: {
+      "seo": ["SEO Specialist"],
+      "google ads": ["Especialista en Performance / Paid Media"],
+      "redes sociales": ["Social Media Manager"]
+    },
+    certs: [
+      { name: "Google Ads Certification", when: ["google ads","marketing digital"] },
+      { name: "HubSpot Content Marketing Certification", when: ["marketing digital","seo"] },
+      { name: "Google Analytics Certification", when: ["google analytics"] }
+    ]
+  },
+  "Datos": {
+    baseRoles: ["Data Analyst"],
+    bySkill: {
+      "python": ["Data Scientist / Data Engineer"],
+      "power bi": ["BI Analyst"],
+      "tableau": ["BI Analyst"]
+    },
+    certs: [
+      { name: "Google Data Analytics Professional Certificate", when: [] },
+      { name: "Microsoft Certified: Power BI Data Analyst Associate (PL-300)", when: ["power bi"] }
+    ]
+  },
+  "Finanzas": {
+    baseRoles: ["Analista Financiero"],
+    bySkill: { "sap": ["Analista SAP FI/CO"] },
+    certs: [
+      { name: "Excel Avanzado / Modelado Financiero", when: [] },
+      { name: "Certificación en NIIF/IFRS", when: [] }
+    ]
+  },
+  "Recursos Humanos": {
+    baseRoles: ["Analista de RRHH"],
+    bySkill: { "reclutamiento": ["Talent Acquisition Specialist"] },
+    certs: [{ name: "Certificación en Reclutamiento y Selección (ej. LinkedIn Recruiter)", when: [] }]
+  },
+  "Administración": {
+    baseRoles: ["Analista Administrativo/a"],
+    bySkill: {},
+    certs: [{ name: "Excel Avanzado", when: [] }]
+  },
+  "Salud": {
+    baseRoles: ["Profesional de la salud"],
+    bySkill: {},
+    certs: [{ name: "Certificaciones específicas de tu especialidad (consultá tu colegio profesional)", when: [] }]
+  },
+  "Ingeniería": {
+    baseRoles: ["Ingeniero/a de Proyecto"],
+    bySkill: {},
+    certs: [{ name: "PMP (Project Management Professional)", when: [] }]
+  },
+  "Diseño": {
+    baseRoles: ["Diseñador/a UI/UX"],
+    bySkill: { "figma": ["Product Designer"] },
+    certs: [{ name: "Google UX Design Certificate", when: ["ui/ux","figma"] }]
+  },
+  "Logística": {
+    baseRoles: ["Analista de Logística / Supply Chain"],
+    bySkill: {},
+    certs: [{ name: "Certificación en Supply Chain Management (ej. CSCP)", when: [] }]
+  },
+  "Legal": {
+    baseRoles: ["Asistente Legal / Paralegal"],
+    bySkill: {},
+    certs: [{ name: "Especializaciones en tu rama del derecho (posgrados cortos)", when: [] }]
+  }
+};
+
+function generarTips(areas, seniority, skills) {
+  const tips = [];
+  const skillSet = new Set(skills.map(s => s.toLowerCase()));
+
+  areas.forEach(area => {
+    const data = ROLE_MAP[area];
+    if (!data) return;
+    const roles = new Set(data.baseRoles);
+    Object.entries(data.bySkill).forEach(([skill, rs]) => {
+      if (skillSet.has(skill)) rs.forEach(r => roles.add(r));
+    });
+    if (roles.size) {
+      tips.push({
+        type: "rol",
+        text: `Con tu perfil en <b>${area}</b>, también podrías aplicar a roles como ${Array.from(roles).slice(0,3).join(", ")}.`
+      });
+    }
+    const certs = data.certs
+      .filter(c => !c.when.length || c.when.some(w => skillSet.has(w)))
+      .slice(0, 2);
+    certs.forEach(c => tips.push({
+      type: "cert",
+      text: `Para fortalecer tu perfil en <b>${area}</b>, según lo que suele pedir el mercado, te puede servir sumar: <b>${c.name}</b>.`
+    }));
+  });
+
+  if (areas.length && !tips.length) {
+    tips.push({
+      type: "rol",
+      text: "Sumar certificaciones reconocidas en tu rubro y mantener actualizado tu perfil de LinkedIn fortalece tus chances frente a otros candidatos."
+    });
+  }
+  if (areas.length && skillSet.size < 3) {
+    tips.push({
+      type: "cert",
+      text: "Cuantas más habilidades concretas sumes a tu perfil (herramientas, software, certificaciones), más ofertas relevantes te vamos a poder matchear."
+    });
+  }
+  if (seniority === "junior" && areas.length) {
+    tips.push({
+      type: "rol",
+      text: "Si estás empezando, no hace falta experiencia laboral formal: proyectos personales, prácticas o voluntariado también cuentan — sumalos en tus palabras clave."
+    });
+  }
+  return tips.slice(0, 6);
+}
+
+const tipsPanel = document.getElementById("tipsPanel");
+const tipsEmpty = document.getElementById("tipsEmpty");
+function renderTips() {
+  const areas = Array.from(selectedAreas);
+  const seniority = document.getElementById("seniority").value;
+  const detectadas = detectarSkills(cvBox.value);
+  const skills = Array.from(new Set([...detectadas, ...confirmedExtra]));
+  const tips = generarTips(areas, seniority, skills);
+
+  if (!areas.length) {
+    tipsPanel.innerHTML = "";
+    tipsPanel.appendChild(tipsEmpty);
+    tipsEmpty.style.display = "block";
+    return;
+  }
+  if (!tips.length) {
+    tipsPanel.innerHTML = `<div class="tipsempty">Todavía no encontramos sugerencias específicas para este rubro — igual, ¡anotate! Vamos a buscarte ofertas relevantes.</div>`;
+    return;
+  }
+  tipsPanel.innerHTML = tips
+    .map(t => `<div class="tipcard ${t.type === "cert" ? "cert" : ""}">${t.type === "cert" ? "🎓" : "💡"} ${t.text}</div>`)
+    .join("");
+}
+
 const cvBox = document.getElementById("cv");
 const preview = document.getElementById("skillsPreview");
 const suggestedPreview = document.getElementById("suggestedPreview");
@@ -404,27 +660,21 @@ suggestedPreview.addEventListener("click", (e) => {
   const s = el.dataset.skill;
   if (confirmedExtra.has(s)) confirmedExtra.delete(s); else confirmedExtra.add(s);
   renderSkills();
+  renderTips();
 });
 
 // ---------- Rubro / área (multi-selección con chips) ----------
 const selectedAreas = new Set();
 const areaInput = document.getElementById("areaInput");
 const areaChips = document.getElementById("areaChips");
-const areaSuggestedLabel = document.getElementById("areaSuggestedLabel");
-const areaSuggestedPreview = document.getElementById("areaSuggestedPreview");
+const areaAutoHint = document.getElementById("areaAutoHint");
+let areaUserTouched = false;
 
 function renderAreaChips() {
   areaChips.innerHTML = Array.from(selectedAreas)
     .map(a => `<span class="chip tag">${a}<span class="x" data-remove="${a}">✕</span></span>`)
     .join("");
-}
-
-function renderAreaSuggestions() {
-  const sugeridas = sugerirAreas(cvBox.value);
-  areaSuggestedLabel.style.display = sugeridas.length ? "block" : "none";
-  areaSuggestedPreview.innerHTML = sugeridas
-    .map(a => `<span class="chip suggested" data-area="${a}">+ ${a}</span>`)
-    .join("");
+  areaAutoHint.style.display = (!areaUserTouched && selectedAreas.size) ? "inline-flex" : "none";
 }
 
 function addArea(value) {
@@ -432,53 +682,47 @@ function addArea(value) {
   if (!v) return;
   selectedAreas.add(v);
   renderAreaChips();
-  renderAreaSuggestions();
+  renderTips();
 }
 
 areaInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
+    areaUserTouched = true;
     addArea(areaInput.value);
     areaInput.value = "";
   }
 });
 areaInput.addEventListener("change", () => {
   // se dispara al elegir una opción del datalist
-  if (areaInput.value) { addArea(areaInput.value); areaInput.value = ""; }
+  if (areaInput.value) { areaUserTouched = true; addArea(areaInput.value); areaInput.value = ""; }
 });
 areaChips.addEventListener("click", (e) => {
   const rm = e.target.closest("[data-remove]");
   if (!rm) return;
+  areaUserTouched = true;
   selectedAreas.delete(rm.dataset.remove);
   renderAreaChips();
-  renderAreaSuggestions();
-});
-areaSuggestedPreview.addEventListener("click", (e) => {
-  const el = e.target.closest(".chip.suggested");
-  if (!el) return;
-  addArea(el.dataset.area);
+  renderTips();
 });
 
-// ---------- Nivel de experiencia: sugerencia desde el CV ----------
+// ---------- Nivel de experiencia: autocompletado desde el CV ----------
 const seniorityEl = document.getElementById("seniority");
-const senioritySuggestEl = document.getElementById("senioritySuggest");
+const seniorityAutoHint = document.getElementById("seniorityAutoHint");
+let seniorityUserTouched = false;
 seniorityEl.addEventListener("change", () => {
-  senioritySuggestEl.style.display = "none";
+  seniorityUserTouched = true;
+  seniorityAutoHint.style.display = "none";
+  renderTips();
 });
 
-function renderSeniority() {
-  if (seniorityEl.value !== "cualquiera") { senioritySuggestEl.style.display = "none"; return; }
+function autocompletarSeniority() {
+  if (seniorityUserTouched) return;
   const nivel = sugerirSeniority(cvBox.value);
-  if (!nivel) { senioritySuggestEl.style.display = "none"; return; }
-  senioritySuggestEl.style.display = "flex";
-  senioritySuggestEl.className = "suggest-banner";
-  senioritySuggestEl.innerHTML =
-    `<span>💡 Por tu CV, parece nivel <b>${SENIORITY_LABELS[nivel]}</b></span>` +
-    `<button type="button" id="applySeniorityBtn">Aplicar</button>`;
-  document.getElementById("applySeniorityBtn").addEventListener("click", () => {
+  if (nivel && seniorityEl.value !== nivel) {
     seniorityEl.value = nivel;
-    senioritySuggestEl.style.display = "none";
-  });
+    seniorityAutoHint.style.display = "block";
+  }
 }
 
 // ---------- Email: autocompletado desde el CV ----------
@@ -504,38 +748,61 @@ function autocompletarEmail() {
   }
 }
 
-// ---------- Idiomas: sugerencia desde el CV ----------
-const langSuggestedLabel = document.getElementById("langSuggestedLabel");
-const langSuggestedPreview = document.getElementById("langSuggestedPreview");
+// ---------- Idiomas: autocompletado desde el CV ----------
+const langAutoHint = document.getElementById("langAutoHint");
+let langUserTouched = false;
 
-function renderLangSuggestions() {
+function autocompletarIdiomas() {
+  if (langUserTouched) return;
   const sugeridos = sugerirIdiomasCv(cvBox.value);
-  langSuggestedLabel.style.display = sugeridos.length ? "block" : "none";
-  langSuggestedPreview.innerHTML = sugeridos
-    .map(code => `<span class="chip suggested" data-code="${code}">+ ${(LANGUAGES.find(l => l.code === code) || {}).label || code}</span>`)
-    .join("");
+  if (!sugeridos.length) return;
+  sugeridos.forEach(code => {
+    selectedLangs.add(code);
+    const pillEl = [...langGrid.children].find(c => c.dataset.code === code);
+    if (pillEl) pillEl.classList.add("active", "lang-active");
+  });
+  langAutoHint.style.display = "block";
 }
 
-langSuggestedPreview.addEventListener("click", (e) => {
-  const el = e.target.closest(".chip.suggested");
-  if (!el) return;
-  const code = el.dataset.code;
-  selectedLangs.add(code);
-  const pillEl = [...langGrid.children].find(c => c.dataset.code === code);
-  if (pillEl) pillEl.classList.add("active", "lang-active");
-  renderLangSuggestions();
+// ---------- Revelar el resto del formulario recién cuando hay CV (o skip manual) ----------
+const revealSection = document.getElementById("revealSection");
+const submitBtn = document.getElementById("btn");
+let revealed = false;
+function revealFields() {
+  if (revealed) return;
+  revealed = true;
+  revealSection.style.display = "block";
+  submitBtn.style.display = "block";
+}
+document.getElementById("skipCvLink").addEventListener("click", (e) => {
+  e.preventDefault();
+  revealFields();
 });
 
 // Corre TODO el análisis del CV de una sola vez, cada vez que cambia el texto.
 function refreshCvDerived() {
   renderSkills();
-  renderAreaSuggestions();
-  renderSeniority();
-  renderLangSuggestions();
+  if (cvBox.value.trim().length > 35) revealFields();
+  if (revealed) {
+    autocompletarSeniority();
+    autocompletarIdiomas();
+    if (!areaUserTouched) {
+      sugerirAreas(cvBox.value).forEach(a => { selectedAreas.add(a); });
+      renderAreaChips();
+    }
+  }
   autocompletarEmail();
+  renderTips();
 }
 
 cvBox.addEventListener("input", refreshCvDerived);
+
+// ---------- Plantillas de CV (ATS) ----------
+const tplToggle = document.getElementById("tplToggle");
+const tplPanel = document.getElementById("tplPanel");
+tplToggle.addEventListener("click", () => {
+  tplPanel.classList.toggle("open");
+});
 
 // ---------- Subir CV (PDF / Word / TXT) y extraer texto automáticamente ----------
 const fileInput = document.getElementById("fileInput");
@@ -572,8 +839,9 @@ fileInput.addEventListener("change", async () => {
     }
     cvBox.value = texto.trim();
     refreshCvDerived();
+    revealFields();
     fileStatus.style.color = "#16a34a";
-    fileStatus.textContent = "✅ CV leído (" + texto.trim().split(/\s+/).length + " palabras) — revisalo abajo";
+    fileStatus.textContent = "✅ CV leído (" + texto.trim().split(/\s+/).length + " palabras) — revisá los campos completados abajo";
   } catch (err) {
     fileStatus.style.color = "#b91c1c";
     fileStatus.textContent = "No pudimos leer el archivo, pegá el texto manualmente.";
@@ -605,6 +873,8 @@ LANGUAGES.forEach(l => {
   el.textContent = l.label;
   el.dataset.code = l.code;
   el.addEventListener("click", () => {
+    langUserTouched = true;
+    langAutoHint.style.display = "none";
     if (selectedLangs.has(l.code)) selectedLangs.delete(l.code); else selectedLangs.add(l.code);
     el.classList.toggle("active");
     el.classList.toggle("lang-active");
@@ -708,12 +978,12 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   emailAutoHint.style.display = "none";
   confirmedExtra.clear();
   selectedAreas.clear();
+  areaUserTouched = false;
   renderAreaChips();
-  areaSuggestedPreview.innerHTML = "";
-  areaSuggestedLabel.style.display = "none";
-  senioritySuggestEl.style.display = "none";
-  langSuggestedPreview.innerHTML = "";
-  langSuggestedLabel.style.display = "none";
+  seniorityUserTouched = false;
+  seniorityAutoHint.style.display = "none";
+  langUserTouched = false;
+  langAutoHint.style.display = "none";
   selectedLangs.clear(); selectedLangs.add("es");
   [...langGrid.children].forEach(c => {
     c.classList.toggle("active", c.dataset.code === "es");
@@ -724,6 +994,11 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     c.classList.toggle("active", c.dataset.code === "remoto_mundial");
     c.classList.toggle("mode-active", c.dataset.code === "remoto_mundial");
   });
+  tplPanel.classList.remove("open");
+  renderTips();
+  revealed = false;
+  revealSection.style.display = "none";
+  submitBtn.style.display = "none";
 });
 </script>
 </body>
