@@ -303,6 +303,184 @@ def mark_kit_sent(user_id):
     )
 
 
+# ---------------------------------------------------------------------
+# Coaching dinámico: lee lo que cada usuario cargó en seguimiento.html
+# (tabla "applications"), calcula un diagnóstico y, si hay novedades desde
+# el último envío, manda un mail con recomendaciones — misma lógica que la
+# hoja "Diagnóstico" de la planilla, pero portada a Python para poder
+# correr sola cada 5 horas sin que el usuario tenga que abrir el Excel.
+# ---------------------------------------------------------------------
+MOTIVO_TIP = {
+    "Sin respuesta del reclutador": "El ghosting es muy común — no lo tomes como algo personal, seguí aplicando en volumen y activá más alertas del Kit.",
+    "Búsqueda cerrada / pausada por la empresa": "No depende de tu perfil — es una señal de que conviene diversificar más portales y rubros.",
+    "Requisito de experiencia no cumplido": "Probá aplicar también a búsquedas de nivel junior/semi senior mientras sumás experiencia, y destacá proyectos personales o voluntariado en el CV.",
+    "Habilidad técnica faltante": "Revisá tu Plan de Capacitación: sumar esa habilidad puntual puede destrabar varias postulaciones parecidas.",
+    "Expectativa salarial no acorde": "Investigá el rango de mercado de tu rol antes de la entrevista para negociar con datos concretos.",
+    "Otro candidato seleccionado": "Buena señal: tu perfil está pasando los filtros. Es cuestión de volumen y timing, seguí aplicando.",
+    "Entrevista no fue bien": "Anotá después de cada entrevista qué pregunta te trabó — practicar esas respuestas puntuales mejora mucho la conversión.",
+    "No pasó el filtro CV / ATS": "Usá una de las plantillas ATS del formulario y revisá que tu CV tenga las palabras clave exactas de cada aviso.",
+    "Proceso muy largo / desistí yo": "Priorizá procesos con tiempos de respuesta más cortos si necesitás una salida rápida.",
+    "Otro": "Anotá el detalle en Notas para poder revisar el patrón más adelante.",
+}
+
+
+def get_users_for_coaching():
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/users",
+        headers=HEADERS,
+        params={
+            "select": "id,email,last_coaching_sent_at",
+            "active": "eq.true",
+        },
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def get_applications(email):
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/applications",
+        headers=HEADERS,
+        params={"select": "*", "email": f"eq.{email}", "order": "created_at.asc"},
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def mark_coaching_sent(user_id, when_iso):
+    requests.patch(
+        f"{SUPABASE_URL}/rest/v1/users",
+        headers=HEADERS,
+        params={"id": f"eq.{user_id}"},
+        json={"last_coaching_sent_at": when_iso},
+        timeout=30,
+    )
+
+
+def _parse_iso(s):
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def compute_diagnostico(apps):
+    total = len(apps)
+    if not total:
+        return None
+
+    def count_estado(estado):
+        return sum(1 for a in apps if (a.get("estado") or "") == estado)
+
+    sin_resp = count_estado("Sin respuesta")
+    entrevista = count_estado("Entrevista")
+    oferta = count_estado("Oferta recibida")
+    rechazado = count_estado("Rechazado")
+
+    pct_sin_resp = sin_resp / total if total else 0
+    tasa_entrevista = (entrevista + oferta) / total if total else 0
+
+    tiempos = []
+    for a in apps:
+        fp, fr = a.get("fecha_postulacion"), a.get("fecha_respuesta")
+        if fp and fr:
+            try:
+                d1 = datetime.fromisoformat(fp)
+                d2 = datetime.fromisoformat(fr)
+                tiempos.append((d2 - d1).days)
+            except Exception:
+                pass
+    tiempo_prom = round(sum(tiempos) / len(tiempos), 1) if tiempos else None
+
+    motivo_counts = {}
+    for a in apps:
+        m = a.get("motivo")
+        if m:
+            motivo_counts[m] = motivo_counts.get(m, 0) + 1
+    top_motivo = max(motivo_counts, key=motivo_counts.get) if motivo_counts else None
+
+    insights = []
+    if total < 8:
+        insights.append(
+            "📈 Volumen bajo: llevás menos de 8 postulaciones registradas. Para tener resultados "
+            "significativos, apuntá a aplicar varias por semana usando el Kit de Búsqueda Laboral."
+        )
+    if pct_sin_resp > 0.5:
+        insights.append(
+            "⚠️ Más de la mitad de tus postulaciones no tienen respuesta. Suele indicar que el CV no "
+            "pasa el filtro ATS o que la búsqueda no está bien afinada — usá una plantilla ATS y revisá "
+            "que tu CV repita las palabras clave exactas de cada aviso."
+        )
+    if total >= 5 and tasa_entrevista < 0.15:
+        insights.append(
+            "🎯 Tu tasa de avance a entrevista es baja para el volumen que llevás. Antes de seguir "
+            "aplicando más, revisá si el CV está bien alineado a los avisos a los que postulás."
+        )
+    if top_motivo:
+        insights.append(f"🔁 Motivo más frecuente: {top_motivo}. {MOTIVO_TIP.get(top_motivo, '')}")
+    if oferta > 0:
+        insights.append(
+            "🎉 ¡Ya tenés ofertas recibidas! Compará condiciones (salario, modalidad, crecimiento) "
+            "antes de decidir."
+        )
+
+    return {
+        "total": total, "sin_resp": sin_resp, "entrevista": entrevista, "oferta": oferta,
+        "rechazado": rechazado, "pct_sin_resp": pct_sin_resp, "tasa_entrevista": tasa_entrevista,
+        "tiempo_prom": tiempo_prom, "top_motivo": top_motivo, "insights": insights,
+    }
+
+
+def send_coaching_email(email, diag):
+    insights_html = "".join(f"<li style='margin-bottom:8px'>{i}</li>" for i in diag["insights"])
+    tiempo_txt = f"{diag['tiempo_prom']} días" if diag["tiempo_prom"] is not None else "sin datos aún"
+
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
+      <h2 style="background:linear-gradient(90deg,#6d28d9,#db2777);-webkit-background-clip:text;background-clip:text;color:transparent">📊 Tu diagnóstico de búsqueda</h2>
+      <p style="color:#444;font-size:14px">Esto se arma solo con lo que fuiste cargando en
+      <a href="https://kxl100rx.github.io/empleo/seguimiento.html" style="color:#2563eb">Registrar seguimiento</a>.</p>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px">
+        <tr><td style="padding:6px 0;color:#666">Postulaciones registradas</td><td style="padding:6px 0;font-weight:bold;text-align:right">{diag['total']}</td></tr>
+        <tr><td style="padding:6px 0;color:#666">Sin respuesta</td><td style="padding:6px 0;font-weight:bold;text-align:right">{diag['sin_resp']} ({diag['pct_sin_resp']*100:.0f}%)</td></tr>
+        <tr><td style="padding:6px 0;color:#666">Entrevistas</td><td style="padding:6px 0;font-weight:bold;text-align:right">{diag['entrevista']}</td></tr>
+        <tr><td style="padding:6px 0;color:#666">Ofertas recibidas</td><td style="padding:6px 0;font-weight:bold;text-align:right">{diag['oferta']}</td></tr>
+        <tr><td style="padding:6px 0;color:#666">Tiempo promedio de respuesta</td><td style="padding:6px 0;font-weight:bold;text-align:right">{tiempo_txt}</td></tr>
+      </table>
+
+      <p style="font-size:13px;font-weight:bold;color:#52525b">Recomendaciones para vos ahora:</p>
+      <ul style="font-size:13.5px;color:#333;padding-left:20px">{insights_html if insights_html else "<li>Seguí cargando postulaciones para que podamos darte recomendaciones más precisas.</li>"}</ul>
+
+      <p style="color:#999;font-size:12px;margin-top:20px">
+        Seguí registrando resultados en <a href="https://kxl100rx.github.io/empleo/seguimiento.html" style="color:#999">seguimiento.html</a> —
+        cuantos más datos caes, más preciso es este diagnóstico.
+      </p>
+    </div>"""
+
+    payload = {
+        "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
+        "to": [{"email": email}],
+        "subject": "📊 Tu diagnóstico de búsqueda actualizado",
+        "htmlContent": html,
+    }
+    r = requests.post(
+        "https://api.brevo.com/v3/smtp/email",
+        headers={"api-key": BREVO_API_KEY, "Content-Type": "application/json"},
+        json=payload,
+        timeout=30,
+    )
+    print(f"Coaching email a {email}: status {r.status_code}")
+    if r.status_code >= 300:
+        print(r.text)
+        return False
+    return True
+
+
 def clean(html):
     text = re.sub(r"<[^>]+>", " ", html or "")
     return re.sub(r"\s+", " ", text).strip()
@@ -484,6 +662,37 @@ def main():
     for user in pending_kit:
         if send_kit_email(user):
             mark_kit_sent(user["id"])
+
+    coaching_users = get_users_for_coaching()
+    coaching_sent_count = 0
+    for cu in coaching_users:
+        email = cu.get("email")
+        if not email:
+            continue
+        apps = get_applications(email)
+        if not apps:
+            continue
+        last_sent = _parse_iso(cu.get("last_coaching_sent_at"))
+        newest_app = None
+        for a in apps:
+            ca = _parse_iso(a.get("created_at"))
+            if ca and (newest_app is None or ca > newest_app):
+                newest_app = ca
+        now = datetime.now(timezone.utc)
+        should_send = False
+        if last_sent is None:
+            should_send = True
+        else:
+            hours_since = (now - last_sent).total_seconds() / 3600
+            if hours_since >= 20 and newest_app and newest_app > last_sent:
+                should_send = True
+        if not should_send:
+            continue
+        diag = compute_diagnostico(apps)
+        if send_coaching_email(email, diag):
+            mark_coaching_sent(cu["id"], now.isoformat())
+            coaching_sent_count += 1
+    print(f"{coaching_sent_count} mail(s) de coaching enviados")
 
     users = get_active_users()
     all_jobs = fetch_jobs()
