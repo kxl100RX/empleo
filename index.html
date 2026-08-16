@@ -174,6 +174,44 @@
   .tipcard.cert { background: linear-gradient(135deg,#fdf4ff,#fff1f2); border-color: #f5d0fe; color: #701a75; }
   .tipcard.cert b { color: #86198f; }
   .tipsempty { font-size: 12.5px; color: #a1a1aa; }
+  .kit-section {
+    margin-top: 18px; padding: 16px 18px; border-radius: 14px;
+    background: linear-gradient(135deg,#faf5ff,#eff6ff); border: 1.5px solid #e9d5ff;
+    animation: fadein .25s ease;
+  }
+  .kit-title { font-weight: 800; font-size: 15px; color: #6d28d9; margin-bottom: 4px; }
+  .kit-sub { font-size: 12.5px; color: #6b7280; margin: 0 0 10px; line-height: 1.5; }
+  .kit-sub-label { font-size: 12px; font-weight: 700; color: #52525b; margin: 10px 0 4px; }
+  .copybox {
+    display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #e4e4e7;
+    border-radius: 10px; padding: 8px 10px; font-size: 12.5px; color: #27272a;
+  }
+  .copybox span { flex: 1; word-break: break-word; }
+  .copybtn {
+    background: #6d28d9; color: #fff; border: none; padding: 6px 11px; border-radius: 8px;
+    font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  }
+  .copybtn:hover { background: #5b21b6; }
+  .alertlinks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .alertlink {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: #fff; border: 1.5px solid #e4e4e7; border-radius: 10px; padding: 8px 12px;
+    font-size: 12.5px; flex: 1 1 200px;
+  }
+  .alertlink-name { font-weight: 700; color: #27272a; }
+  .alertlink-btn { color: #2563eb; font-weight: 700; text-decoration: none; font-size: 12px; white-space: nowrap; }
+  .alertlink-btn:hover { text-decoration: underline; }
+  .kit-note { font-size: 11px; color: #a1a1aa; margin-top: 8px; line-height: 1.4; }
+  .kit-download {
+    margin-top: 14px; display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; background: #fff; border: 1.5px solid #e4e4e7; border-radius: 10px; padding: 10px 12px;
+    font-size: 12.5px; flex-wrap: wrap;
+  }
+  .kit-download-btn {
+    background: #16a34a; color: #fff; border: none; padding: 7px 13px; border-radius: 8px;
+    font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap;
+  }
+  .kit-download-btn:hover { background: #15803d; }
 </style>
 </head>
 <body>
@@ -305,6 +343,7 @@
 
     <button type="submit" id="btn" style="display:none">Anotarme</button>
     <div id="msg"></div>
+    <div id="kitPanel"></div>
   </form>
   <p class="footer-note">Tus datos solo se usan para buscarte trabajo. Nadie más puede ver tu perfil.</p>
 </div>
@@ -608,6 +647,118 @@ function generarTips(areas, seniority, skills) {
   }
   return tips.slice(0, 6);
 }
+
+// ---------- Kit de Búsqueda Laboral: deep-links a portales + búsquedas listas para pegar ----------
+const COUNTRY_CODE_MAP = {
+  "argentina": "ar", "méxico": "mx", "mexico": "mx", "chile": "cl", "colombia": "co",
+  "perú": "pe", "peru": "pe", "ecuador": "ec", "uruguay": "uy", "paraguay": "py",
+  "bolivia": "bo", "venezuela": "ve", "panamá": "pa", "panama": "pa", "guatemala": "gt",
+  "honduras": "hn", "el salvador": "sv", "nicaragua": "ni", "costa rica": "cr",
+  "república dominicana": "do", "republica dominicana": "do", "puerto rico": "pr",
+  "españa": "es", "spain": "es", "estados unidos": "us", "usa": "us", "united states": "us",
+  "brasil": "br", "brazil": "br"
+};
+const INDEED_DOMAINS = { ar: "ar.indeed.com", mx: "mx.indeed.com", cl: "cl.indeed.com", co: "co.indeed.com", pe: "pe.indeed.com", ec: "ec.indeed.com", es: "es.indeed.com", us: "www.indeed.com", uy: "uy.indeed.com" };
+const COMPUTRABAJO_DOMAINS = { ar: "ar.computrabajo.com", mx: "mx.computrabajo.com", co: "co.computrabajo.com", cl: "cl.computrabajo.com", pe: "pe.computrabajo.com", ec: "ec.computrabajo.com" };
+const BUMERAN_DOMAINS = { ar: "www.bumeran.com.ar", mx: "www.bumeran.com.mx", pe: "www.bumeran.com.pe" };
+
+function detectarCodigoPais(pais) {
+  const t = (pais || "").trim().toLowerCase();
+  if (!t) return null;
+  for (const [name, code] of Object.entries(COUNTRY_CODE_MAP)) {
+    if (t.includes(name)) return code;
+  }
+  return null;
+}
+
+function generarPalabrasClaveSimples(areas, skills) {
+  const roles = new Set();
+  areas.forEach(a => { const d = ROLE_MAP[a]; if (d) d.baseRoles.forEach(r => roles.add(r)); });
+  const base = roles.size ? Array.from(roles).slice(0, 2) : areas.slice(0, 2);
+  const top = (skills || []).slice(0, 3);
+  return Array.from(new Set([...base, ...top])).join(", ") || "empleo";
+}
+
+function generarBooleanSearch(areas, seniority, skills) {
+  const roles = new Set();
+  areas.forEach(a => { const d = ROLE_MAP[a]; if (d) d.baseRoles.forEach(r => roles.add(r)); });
+  const roleGroup = roles.size ? `(${Array.from(roles).slice(0, 4).map(r => `"${r}"`).join(" OR ")})` : "";
+  const skillGroup = (skills || []).length ? `(${skills.slice(0, 4).map(s => `"${s}"`).join(" OR ")})` : "";
+  const nivelMap = {
+    junior: '("junior" OR "trainee" OR "sin experiencia")',
+    semi_senior: '"semi senior"',
+    senior: '"senior"',
+    gerencial: '("gerente" OR "director")'
+  };
+  const nivelGroup = nivelMap[seniority] || "";
+  return [roleGroup, skillGroup, nivelGroup].filter(Boolean).join(" AND ") || "empleo";
+}
+
+function generarKit(areas, seniority, skills, country) {
+  const cc = detectarCodigoPais(country) || "ar";
+  const ubicacion = country || "";
+  const simple = generarPalabrasClaveSimples(areas, skills);
+  const boolean = generarBooleanSearch(areas, seniority, skills);
+  const primerTermino = simple.split(",")[0].trim();
+  const qSimple = encodeURIComponent(simple);
+  const qBoolean = encodeURIComponent(boolean);
+  const qLoc = encodeURIComponent(ubicacion);
+  const slug = encodeURIComponent(primerTermino).replace(/%20/g, "-").toLowerCase();
+
+  const indeedHost = INDEED_DOMAINS[cc] || "www.indeed.com";
+  const ctHost = COMPUTRABAJO_DOMAINS[cc] || "www.computrabajo.com";
+  const bmHost = BUMERAN_DOMAINS[cc] || "www.bumeran.com.ar";
+
+  return {
+    simple, boolean,
+    links: [
+      { portal: "LinkedIn", url: `https://www.linkedin.com/jobs/search/?keywords=${qBoolean}${ubicacion ? `&location=${qLoc}` : ""}` },
+      { portal: "Indeed", url: `https://${indeedHost}/jobs?q=${qBoolean}${ubicacion ? `&l=${qLoc}` : ""}` },
+      { portal: "Computrabajo", url: `https://${ctHost}/trabajo-de-${slug}` },
+      { portal: "Bumeran", url: `https://${bmHost}/empleos-busqueda-${slug}.html` },
+      { portal: "Glassdoor", url: `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${qSimple}` },
+      { portal: "InfoJobs (España)", url: `https://www.infojobs.net/jobsearch/search-results/list.xhtml?keyword=${qSimple}` }
+    ]
+  };
+}
+
+const kitPanel = document.getElementById("kitPanel");
+function renderKit(areas, seniority, skills, country) {
+  if (!areas.length) { kitPanel.innerHTML = ""; return; }
+  const data = generarKit(areas, seniority, skills, country);
+  const linksHtml = data.links.map(l => `
+    <div class="alertlink">
+      <span class="alertlink-name">${l.portal}</span>
+      <a href="${l.url}" target="_blank" rel="noopener" class="alertlink-btn">Abrir búsqueda →</a>
+    </div>`).join("");
+  kitPanel.innerHTML = `
+    <div class="kit-section">
+      <div class="kit-title">🎁 Tu Kit de Búsqueda Laboral</div>
+      <p class="kit-sub">Armamos esto con tu perfil para que también puedas activar alertas en los portales que nosotros no podemos revisar automáticamente.</p>
+      <div class="kit-sub-label">Búsqueda simple — pegala en Computrabajo, Bumeran o cualquier buscador básico:</div>
+      <div class="copybox"><span id="copySimple">${data.simple}</span><button type="button" class="copybtn" data-copy="copySimple">Copiar</button></div>
+      <div class="kit-sub-label">Búsqueda avanzada — pegala en LinkedIn, Indeed o buscadores que soporten operadores:</div>
+      <div class="copybox"><span id="copyBoolean">${data.boolean}</span><button type="button" class="copybtn" data-copy="copyBoolean">Copiar</button></div>
+      <div class="kit-sub-label">O abrí la búsqueda ya armada con un clic y activá la alerta ahí mismo:</div>
+      <div class="alertlinks">${linksHtml}</div>
+      <p class="kit-note">Los links son de mejor esfuerzo — si el país no matchea exacto, ajustalo dentro del portal. Nunca accedemos a tus cuentas: vos activás cada alerta con tu propio login.</p>
+      <div class="kit-download">
+        <span>📊 Organizá cada postulación con nuestra planilla de seguimiento</span>
+        <a href="recursos/tracker-busqueda-laboral.xlsx" download class="kit-download-btn">Descargar planilla</a>
+      </div>
+    </div>`;
+}
+kitPanel.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".copybtn");
+  if (!btn) return;
+  const span = document.getElementById(btn.dataset.copy);
+  try {
+    await navigator.clipboard.writeText(span.textContent);
+    const original = btn.textContent;
+    btn.textContent = "¡Copiado!";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch (err) { /* clipboard no disponible, el usuario puede seleccionar el texto a mano */ }
+});
 
 const tipsPanel = document.getElementById("tipsPanel");
 const tipsEmpty = document.getElementById("tipsEmpty");
@@ -968,6 +1119,8 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     (skills.length ? ` que matcheen con: <b>${skills.join(", ")}</b>.` : ".") +
     ` Por los idiomas que hablás, tenés alcance en: ${regiones}.` +
     ` Revisá tu correo cada tanto (y spam la primera vez) — el robot corre cada 5 horas.`;
+
+  renderKit(areas, seniority, skills, country);
 
   e.target.reset();
   preview.innerHTML = "";
