@@ -1,6 +1,7 @@
 -- Ejecutar esto UNA vez en Supabase: proyecto > SQL Editor > New query > pegar > Run
 -- (Si ya habías creado las tablas antes, este mismo archivo agrega las columnas
--- nuevas de idiomas/modalidad de forma segura con "add column if not exists")
+-- nuevas de idiomas/modalidad/nivel de experiencia de forma segura con
+-- "add column if not exists")
 
 create extension if not exists pgcrypto;
 
@@ -14,6 +15,7 @@ create table if not exists users (
   languages text[] not null default '{}',
   work_mode text default 'remoto_mundial',
   country text,
+  seniority text default 'cualquiera',
   created_at timestamptz default now(),
   active boolean default true
 );
@@ -21,6 +23,7 @@ create table if not exists users (
 alter table users add column if not exists languages text[] not null default '{}';
 alter table users add column if not exists work_mode text default 'remoto_mundial';
 alter table users add column if not exists country text;
+alter table users add column if not exists seniority text default 'cualquiera';
 
 create table if not exists sent_jobs (
   id uuid primary key default gen_random_uuid(),

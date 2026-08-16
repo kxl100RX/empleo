@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alertas de empleo junior/trainee</title>
+<title>Alertas de Empleo — para cualquier persona, nivel y rubro</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.4.9/mammoth.browser.min.js"></script>
@@ -34,10 +34,11 @@
     border-left: 3px solid #ede9fe; padding: 4px 0 4px 16px; margin: 18px 0;
   }
   .step.s2 { border-color: #fce7f3; }
-  .step.s3 { border-color: #dbeafe; }
-  .step.s4 { border-color: #d1fae5; }
-  .step.s5 { border-color: #fef3c7; }
-  .step.s6 { border-color: #ffe4e6; }
+  .step.s3 { border-color: #fef3c7; }
+  .step.s4 { border-color: #dbeafe; }
+  .step.s5 { border-color: #d1fae5; }
+  .step.s6 { border-color: #ffedd5; }
+  .step.s7 { border-color: #ffe4e6; }
   label { display: block; font-weight: 700; margin: 0 0 6px; font-size: 14px; color: #27272a; }
   .stepnum {
     display:inline-flex; align-items:center; justify-content:center;
@@ -92,6 +93,14 @@
     background: #d1fae5; color: #065f46; border: 1.5px solid #6ee7b7;
   }
   .chip.lang { background: #dbeafe; color: #1e3a8a; }
+  .chip.tag {
+    background: #ede9fe; color: #5b21b6; font-size: 13px; padding: 6px 6px 6px 13px;
+  }
+  .chip.tag .x {
+    cursor: pointer; font-weight: 800; opacity: .55; margin-left: 2px; padding: 0 5px;
+    border-radius: 999px; transition: opacity .15s, background .15s;
+  }
+  .chip.tag .x:hover { opacity: 1; background: rgba(91,33,182,.12); }
   .chiplabel { font-size: 12px; color: #a1a1aa; margin-top: 10px; font-weight: 600; }
   .langgrid, .modegrid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
   .pill {
@@ -100,61 +109,109 @@
   }
   .pill.active.lang-active { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
   .pill.active.mode-active { background: #fce7f3; border-color: #f9a8d4; color: #9d174d; }
+  .suggest-banner {
+    margin-top: 10px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;
+    padding: 10px 14px; border-radius: 10px; font-size: 13px; display: flex; align-items: center;
+    justify-content: space-between; gap: 10px; animation: fadein .2s ease;
+  }
+  .suggest-banner button {
+    background: #2563eb; color: #fff; border: none; padding: 7px 13px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .15s;
+  }
+  .suggest-banner button:hover { background: #1d4ed8; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+  .hint { font-size: 12px; color: #a78bfa; font-weight: 600; margin-left: 6px; }
   .footer-note { text-align:center; font-size:12px; color:#a1a1aa; margin-top:18px; }
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>🔎 Alertas de empleo junior / trainee</h1>
-  <p class="sub">Anotate una vez. Cada 5 horas revisamos portales de empleo de todo el mundo y te
-     mandamos por mail las ofertas junior/trainee que matchean con tu perfil, tus idiomas y dónde querés trabajar.</p>
+  <h1>🔎 Alertas de Empleo</h1>
+  <p class="sub">Para cualquier persona, cualquier nivel de experiencia y cualquier rubro. Anotate una vez.
+     Cada 5 horas revisamos portales de empleo de todo el mundo y te mandamos por mail las ofertas que
+     matchean con tu perfil, tu nivel, tus idiomas y dónde querés trabajar.</p>
 
   <form id="form">
     <div class="step s1">
-      <label><span class="stepnum">1</span>Tu email</label>
-      <input type="email" id="email" required placeholder="vos@ejemplo.com">
-    </div>
-
-    <div class="step s2">
-      <label><span class="stepnum">2</span>Área / rol que buscás</label>
-      <select id="area">
-        <option value="programacion">Programación / IT</option>
-        <option value="diseno">Diseño</option>
-        <option value="marketing">Marketing</option>
-        <option value="datos">Datos</option>
-        <option value="administracion">Administración</option>
-        <option value="otro">Otro</option>
-      </select>
-    </div>
-
-    <div class="step s3">
-      <label><span class="stepnum">3</span>Palabras clave (separadas por coma)</label>
-      <input type="text" id="keywords" placeholder="python, react, remoto, ventas">
-      <small>Se usan para filtrar qué avisos son relevantes para vos.</small>
-    </div>
-
-    <div class="step s4">
-      <label><span class="stepnum">4</span>Tu CV</label>
+      <label><span class="stepnum">1</span>Tu CV <span class="hint">(empezá por acá — completamos el resto solos)</span></label>
       <div class="filerow">
         <label class="filebtn" for="fileInput">📎 Subir CV (PDF, Word o TXT)</label>
         <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt">
         <span id="fileStatus"></span>
       </div>
-      <textarea id="cv" placeholder="...o pegá acá directamente el texto de tu CV"></textarea>
+      <textarea id="cv" placeholder="...o pegá acá directamente el texto de tu CV. Lo analizamos para completarte el email, el rubro, el nivel, los idiomas y las habilidades — vos revisás y confirmás todo abajo."></textarea>
       <div class="chiplabel" id="detectedLabel" style="display:none">✅ Habilidades detectadas en tu CV</div>
       <div class="chips" id="skillsPreview"></div>
       <div class="chiplabel" id="suggestedLabel" style="display:none">💡 Quizás también sepas esto (tocá para sumarlo)</div>
       <div class="chips" id="suggestedPreview"></div>
     </div>
 
+    <div class="step s2">
+      <label><span class="stepnum">2</span>Tu email</label>
+      <input type="email" id="email" required placeholder="vos@ejemplo.com">
+      <small id="emailAutoHint" style="display:none;color:#16a34a;font-weight:600">✅ Lo tomamos de tu CV — revisalo y corregilo si hace falta</small>
+    </div>
+
+    <div class="step s3">
+      <label><span class="stepnum">3</span>Rubro / área en la que buscás trabajo <span class="hint">(elegí uno o varios)</span></label>
+      <input type="text" id="areaInput" list="areaList" placeholder="Escribí un rubro y presioná Enter — ej: Programación, Salud, Ventas... podés sumar varios">
+      <datalist id="areaList">
+        <option value="Programación / IT">
+        <option value="Diseño">
+        <option value="Marketing">
+        <option value="Datos">
+        <option value="Administración">
+        <option value="Salud">
+        <option value="Educación">
+        <option value="Gastronomía">
+        <option value="Construcción">
+        <option value="Logística">
+        <option value="Ventas">
+        <option value="Atención al cliente">
+        <option value="Recursos Humanos">
+        <option value="Legal">
+        <option value="Finanzas">
+        <option value="Ingeniería">
+        <option value="Turismo">
+        <option value="Manufactura">
+        <option value="Agricultura">
+        <option value="Seguridad">
+      </datalist>
+      <div class="chips" id="areaChips"></div>
+      <div class="chiplabel" id="areaSuggestedLabel" style="display:none">💡 Detectamos esto en tu CV (tocá para sumarlo)</div>
+      <div class="chips" id="areaSuggestedPreview"></div>
+      <small>Cualquier rubro sirve — no está limitado a tecnología. Enter para agregar, tocá ✕ para quitar.</small>
+    </div>
+
+    <div class="step s4">
+      <label><span class="stepnum">4</span>Nivel de experiencia</label>
+      <select id="seniority">
+        <option value="cualquiera" selected>Cualquiera / no importa</option>
+        <option value="junior">Junior / Trainee / Sin experiencia</option>
+        <option value="semi_senior">Semi Senior</option>
+        <option value="senior">Senior</option>
+        <option value="gerencial">Gerencial / Directivo</option>
+      </select>
+      <div id="senioritySuggest" style="display:none"></div>
+    </div>
+
     <div class="step s5">
-      <label><span class="stepnum">5</span>¿Qué idiomas hablás?</label>
-      <small style="margin-top:0;margin-bottom:8px">Buscamos en portales de todo el mundo — esto define en qué países tenés más chances.</small>
-      <div class="langgrid" id="langGrid"></div>
+      <label><span class="stepnum">5</span>Palabras clave (separadas por coma) <span class="hint">(opcional, sumá lo que quieras)</span></label>
+      <input type="text" id="keywords" placeholder="python, react, ventas, enfermería, contabilidad">
+      <small>Se usan para filtrar qué avisos son relevantes para vos.</small>
     </div>
 
     <div class="step s6">
-      <label><span class="stepnum">6</span>¿Dónde y cómo querés trabajar?</label>
+      <label><span class="stepnum">6</span>¿Qué idiomas hablás?</label>
+      <small style="margin-top:0;margin-bottom:8px">Buscamos en portales de todo el mundo — esto define en qué países tenés más chances.</small>
+      <div class="langgrid" id="langGrid"></div>
+      <div class="chiplabel" id="langSuggestedLabel" style="display:none">💡 Detectamos esto en tu CV (tocá para sumarlo)</div>
+      <div class="chips" id="langSuggestedPreview"></div>
+    </div>
+
+    <div class="step s7">
+      <label><span class="stepnum">7</span>Confirmá dónde y cómo querés trabajar</label>
+      <small style="margin-top:0;margin-bottom:8px">Esto no lo adivinamos por vos — elegilo para que las alertas te sirvan de verdad.</small>
       <div class="modegrid" id="modeGrid"></div>
       <input type="text" id="country" placeholder="Tu país (ej: Argentina) — opcional, mejora el match" style="margin-top:10px">
     </div>
@@ -241,6 +298,85 @@ function sugerirRelacionadas(detectadas) {
   return Array.from(set).slice(0, 8);
 }
 
+// ---------- Autocompletado desde el CV: rubro, nivel e idiomas ----------
+// Todo esto son SUGERENCIAS. Nada se agrega solo: el usuario toca para confirmar.
+const AREA_KEYWORDS = {
+  "Programación / IT": ["programador","desarrollador","software","python","javascript","sql","frontend","backend","full stack","devops","sistemas"],
+  "Diseño": ["diseño gráfico","diseñador","figma","photoshop","illustrator","ui/ux","ux/ui"],
+  "Marketing": ["marketing","seo","redes sociales","community manager","google ads","publicidad"],
+  "Datos": ["data analyst","análisis de datos","power bi","tableau","big data","data scientist","científico de datos"],
+  "Administración": ["administrativo","administración","asistente administrativo","secretaria","secretario"],
+  "Salud": ["enfermería","enfermero","enfermera","médico","médica","medicina","paciente","clínica","hospital","kinesiología","odontología"],
+  "Educación": ["docente","profesor","profesora","maestro","maestra","educación","enseñanza","capacitación"],
+  "Gastronomía": ["cocina","chef","cocinero","gastronomía","mozo","camarero","bartender","repostería"],
+  "Construcción": ["construcción","albañil","obra","arquitecto","ingeniero civil","maestro mayor de obras"],
+  "Logística": ["logística","almacén","depósito","supply chain","transporte","distribución"],
+  "Ventas": ["ventas","vendedor","vendedora","comercial","account executive","representante de ventas"],
+  "Atención al cliente": ["atención al cliente","call center","soporte al cliente","customer service","mesa de ayuda"],
+  "Recursos Humanos": ["recursos humanos","reclutamiento","selección de personal","rrhh","talento humano"],
+  "Legal": ["abogado","abogada","legal","derecho","paralegal","estudio jurídico"],
+  "Finanzas": ["finanzas","contador","contadora","contabilidad","tesorería","auditoría","analista financiero"],
+  "Ingeniería": ["ingeniero","ingeniera","ingeniería"],
+  "Turismo": ["turismo","hotelería","recepcionista","agencia de viajes","hotel"],
+  "Manufactura": ["manufactura","producción","planta","operario","operaria","fábrica"],
+  "Agricultura": ["agricultura","agro","agronomía","cultivo","campo"],
+  "Seguridad": ["seguridad","vigilancia","guardia de seguridad"]
+};
+
+const SENIORITY_HINTS = {
+  gerencial: ["gerente","manager","director","directora","head of","jefe de","chief","vicepresidente"],
+  senior: ["senior","lead","principal","staff","sr.","10 años de experiencia","8 años de experiencia","7 años de experiencia"],
+  semi_senior: ["semi senior","semi-senior","ssr","intermedio","4 años de experiencia","5 años de experiencia","3 años de experiencia"],
+  junior: ["junior","trainee","sin experiencia","becario","recién egresado","recien egresado","primer empleo","estudiante avanzado"]
+};
+const SENIORITY_LABELS = {
+  junior: "Junior / Trainee",
+  semi_senior: "Semi Senior",
+  senior: "Senior",
+  gerencial: "Gerencial / Directivo"
+};
+
+const LANG_HINTS = {
+  en: ["english","inglés","ingles avanzado","ingles intermedio","ingles fluido"],
+  pt: ["português","portugues","portuguese"],
+  fr: ["français","frances","french"],
+  de: ["deutsch","alemán","aleman","german"],
+  it: ["italiano","italian"]
+};
+
+function sugerirAreas(texto) {
+  const t = texto.toLowerCase();
+  const out = [];
+  for (const [area, terms] of Object.entries(AREA_KEYWORDS)) {
+    if (selectedAreas.has(area)) continue;
+    if (terms.some(term => t.includes(term))) out.push(area);
+  }
+  return out.slice(0, 6);
+}
+
+function sugerirSeniority(texto) {
+  const t = texto.toLowerCase();
+  for (const nivel of ["gerencial", "senior", "semi_senior", "junior"]) {
+    if ((SENIORITY_HINTS[nivel] || []).some(h => t.includes(h))) return nivel;
+  }
+  return null;
+}
+
+function sugerirIdiomasCv(texto) {
+  const t = texto.toLowerCase();
+  const out = [];
+  for (const [code, hints] of Object.entries(LANG_HINTS)) {
+    if (!selectedLangs.has(code) && hints.some(h => t.includes(h))) out.push(code);
+  }
+  return out;
+}
+
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+function sugerirEmail(texto) {
+  const m = texto.match(EMAIL_REGEX);
+  return m ? m[0] : null;
+}
+
 const cvBox = document.getElementById("cv");
 const preview = document.getElementById("skillsPreview");
 const suggestedPreview = document.getElementById("suggestedPreview");
@@ -270,7 +406,127 @@ suggestedPreview.addEventListener("click", (e) => {
   renderSkills();
 });
 
-cvBox.addEventListener("input", renderSkills);
+// ---------- Rubro / área (multi-selección con chips) ----------
+const selectedAreas = new Set();
+const areaInput = document.getElementById("areaInput");
+const areaChips = document.getElementById("areaChips");
+const areaSuggestedLabel = document.getElementById("areaSuggestedLabel");
+const areaSuggestedPreview = document.getElementById("areaSuggestedPreview");
+
+function renderAreaChips() {
+  areaChips.innerHTML = Array.from(selectedAreas)
+    .map(a => `<span class="chip tag">${a}<span class="x" data-remove="${a}">✕</span></span>`)
+    .join("");
+}
+
+function renderAreaSuggestions() {
+  const sugeridas = sugerirAreas(cvBox.value);
+  areaSuggestedLabel.style.display = sugeridas.length ? "block" : "none";
+  areaSuggestedPreview.innerHTML = sugeridas
+    .map(a => `<span class="chip suggested" data-area="${a}">+ ${a}</span>`)
+    .join("");
+}
+
+function addArea(value) {
+  const v = value.trim();
+  if (!v) return;
+  selectedAreas.add(v);
+  renderAreaChips();
+  renderAreaSuggestions();
+}
+
+areaInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addArea(areaInput.value);
+    areaInput.value = "";
+  }
+});
+areaInput.addEventListener("change", () => {
+  // se dispara al elegir una opción del datalist
+  if (areaInput.value) { addArea(areaInput.value); areaInput.value = ""; }
+});
+areaChips.addEventListener("click", (e) => {
+  const rm = e.target.closest("[data-remove]");
+  if (!rm) return;
+  selectedAreas.delete(rm.dataset.remove);
+  renderAreaChips();
+  renderAreaSuggestions();
+});
+areaSuggestedPreview.addEventListener("click", (e) => {
+  const el = e.target.closest(".chip.suggested");
+  if (!el) return;
+  addArea(el.dataset.area);
+});
+
+// ---------- Nivel de experiencia: sugerencia desde el CV ----------
+const seniorityEl = document.getElementById("seniority");
+const senioritySuggestEl = document.getElementById("senioritySuggest");
+seniorityEl.addEventListener("change", () => {
+  senioritySuggestEl.style.display = "none";
+});
+
+function renderSeniority() {
+  if (seniorityEl.value !== "cualquiera") { senioritySuggestEl.style.display = "none"; return; }
+  const nivel = sugerirSeniority(cvBox.value);
+  if (!nivel) { senioritySuggestEl.style.display = "none"; return; }
+  senioritySuggestEl.style.display = "flex";
+  senioritySuggestEl.className = "suggest-banner";
+  senioritySuggestEl.innerHTML =
+    `<span>💡 Por tu CV, parece nivel <b>${SENIORITY_LABELS[nivel]}</b></span>` +
+    `<button type="button" id="applySeniorityBtn">Aplicar</button>`;
+  document.getElementById("applySeniorityBtn").addEventListener("click", () => {
+    seniorityEl.value = nivel;
+    senioritySuggestEl.style.display = "none";
+  });
+}
+
+// ---------- Email: autocompletado desde el CV ----------
+const emailEl = document.getElementById("email");
+const emailAutoHint = document.getElementById("emailAutoHint");
+emailEl.addEventListener("input", () => { emailAutoHint.style.display = "none"; });
+
+function autocompletarEmail() {
+  if (emailEl.value.trim()) return; // no pisamos lo que el usuario ya escribió
+  const detectado = sugerirEmail(cvBox.value);
+  if (detectado) {
+    emailEl.value = detectado;
+    emailAutoHint.style.display = "block";
+  }
+}
+
+// ---------- Idiomas: sugerencia desde el CV ----------
+const langSuggestedLabel = document.getElementById("langSuggestedLabel");
+const langSuggestedPreview = document.getElementById("langSuggestedPreview");
+
+function renderLangSuggestions() {
+  const sugeridos = sugerirIdiomasCv(cvBox.value);
+  langSuggestedLabel.style.display = sugeridos.length ? "block" : "none";
+  langSuggestedPreview.innerHTML = sugeridos
+    .map(code => `<span class="chip suggested" data-code="${code}">+ ${(LANGUAGES.find(l => l.code === code) || {}).label || code}</span>`)
+    .join("");
+}
+
+langSuggestedPreview.addEventListener("click", (e) => {
+  const el = e.target.closest(".chip.suggested");
+  if (!el) return;
+  const code = el.dataset.code;
+  selectedLangs.add(code);
+  const pillEl = [...langGrid.children].find(c => c.dataset.code === code);
+  if (pillEl) pillEl.classList.add("active", "lang-active");
+  renderLangSuggestions();
+});
+
+// Corre TODO el análisis del CV de una sola vez, cada vez que cambia el texto.
+function refreshCvDerived() {
+  renderSkills();
+  renderAreaSuggestions();
+  renderSeniority();
+  renderLangSuggestions();
+  autocompletarEmail();
+}
+
+cvBox.addEventListener("input", refreshCvDerived);
 
 // ---------- Subir CV (PDF / Word / TXT) y extraer texto automáticamente ----------
 const fileInput = document.getElementById("fileInput");
@@ -306,7 +562,7 @@ fileInput.addEventListener("change", async () => {
       texto = await file.text();
     }
     cvBox.value = texto.trim();
-    renderSkills();
+    refreshCvDerived();
     fileStatus.style.color = "#16a34a";
     fileStatus.textContent = "✅ CV leído (" + texto.trim().split(/\s+/).length + " palabras) — revisalo abajo";
   } catch (err) {
@@ -378,7 +634,10 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   btn.textContent = "Enviando...";
 
   const email = document.getElementById("email").value.trim();
-  const area = document.getElementById("area").value;
+  // por si el usuario escribió un rubro y no tocó Enter/blur, lo sumamos igual
+  if (areaInput.value.trim()) { addArea(areaInput.value); areaInput.value = ""; }
+  const areas = Array.from(selectedAreas);
+  const seniority = document.getElementById("seniority").value;
   const keywords = document.getElementById("keywords").value
     .split(",").map(k => k.trim()).filter(Boolean);
   const cvText = cvBox.value.trim();
@@ -391,11 +650,12 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     email,
     keywords,
     skills,
-    areas: [area],
+    areas,
     cv_text: cvText || null,
     languages,
     work_mode: selectedMode,
-    country: country || null
+    country: country || null,
+    seniority
   });
 
   btn.disabled = false;
@@ -418,10 +678,13 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     presencial: "presenciales en tu país",
     cualquiera: "remotas o presenciales, sin restricción"
   }[selectedMode];
+  const nivelTexto = SENIORITY_LABELS[seniority] || "cualquier nivel de experiencia";
 
   msg.className = "ok";
   msg.innerHTML =
     `<span class="resumen-title">¡Listo! Te vamos a escribir a ${email}</span>` +
+    (areas.length ? `Rubro: <b>${areas.join(", ")}</b>. ` : "") +
+    `Nivel: <b>${nivelTexto}</b>. ` +
     `Vamos a buscarte ofertas ${modoTexto}` +
     (skills.length ? ` que matcheen con: <b>${skills.join(", ")}</b>.` : ".") +
     ` Por los idiomas que hablás, tenés alcance en: ${regiones}.` +
@@ -433,7 +696,15 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   detectedLabel.style.display = "none";
   suggestedLabel.style.display = "none";
   fileStatus.textContent = "";
+  emailAutoHint.style.display = "none";
   confirmedExtra.clear();
+  selectedAreas.clear();
+  renderAreaChips();
+  areaSuggestedPreview.innerHTML = "";
+  areaSuggestedLabel.style.display = "none";
+  senioritySuggestEl.style.display = "none";
+  langSuggestedPreview.innerHTML = "";
+  langSuggestedLabel.style.display = "none";
   selectedLangs.clear(); selectedLangs.add("es");
   [...langGrid.children].forEach(c => {
     c.classList.toggle("active", c.dataset.code === "es");
