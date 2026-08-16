@@ -212,9 +212,53 @@
     font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap;
   }
   .kit-download-btn:hover { background: #15803d; }
+
+  #themeToggle {
+    position: fixed; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%;
+    border: 1.5px solid #e4e4e7; background: #fff; cursor: pointer; font-size: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08); z-index: 999; transition: background .15s, border-color .15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #themeToggle:hover { background: #f4f0ff; }
+
+  body.dark-mode { background: linear-gradient(135deg, #1b1730 0%, #241726 45%, #0f2028 100%); background-attachment: fixed; }
+  body.dark-mode .card { background: #191524; border-color: #2e2640; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+  body.dark-mode p.sub, body.dark-mode small, body.dark-mode .kit-sub, body.dark-mode .footer-note,
+  body.dark-mode .tipsempty, body.dark-mode .kit-note { color: #a39cc0; }
+  body.dark-mode label, body.dark-mode .tplname, body.dark-mode .alertlink-name, body.dark-mode .copybox { color: #ece7f7; }
+  body.dark-mode input, body.dark-mode select, body.dark-mode textarea {
+    background: #241f36; border-color: #3a3252; color: #ece7f7;
+  }
+  body.dark-mode input::placeholder, body.dark-mode textarea::placeholder { color: #756e8c; }
+  body.dark-mode input:focus, body.dark-mode select:focus, body.dark-mode textarea:focus { background: #2a2440; }
+  body.dark-mode #msg.ok { background: #0f2e22; color: #6ee7b7; border-color: #14532d; }
+  body.dark-mode #msg.err { background: #341015; color: #fca5a5; border-color: #7f1d1d; }
+  body.dark-mode .filebtn { background: #241f36; border-color: #4c3d78; color: #c4b5fd; }
+  body.dark-mode .tplbtn { background: #1c2740; border-color: #3b5480; color: #93c5fd; }
+  body.dark-mode .tplpanel { background: #1c1830; border-color: #302a48; }
+  body.dark-mode .tplitem { border-bottom-color: #2e2640; }
+  body.dark-mode .cv-cta { background: #201a30; border-color: #3a2f56; }
+  body.dark-mode .kit-section { background: linear-gradient(135deg,#201a30,#12202f); border-color: #3a2f56; }
+  body.dark-mode .copybox, body.dark-mode .alertlink, body.dark-mode .kit-download {
+    background: #1c1830; border-color: #302a48;
+  }
+  body.dark-mode .tipcard { background: linear-gradient(135deg,#0f2530,#0f1c2f); border-color: #1e3a4a; color: #cffafe; }
+  body.dark-mode .tipcard.cert { background: linear-gradient(135deg,#271830,#2a1220); border-color: #4a1e50; color: #fbcfe8; }
+  body.dark-mode .pill { background: #241f36; border-color: #3a3252; color: #c4b5fd; }
+  body.dark-mode .suggest-banner { background: #10203a; border-color: #1e3a5f; color: #93c5fd; }
+  body.dark-mode #themeToggle { background: #191524; border-color: #3a3252; color: #ece7f7; }
+  body.dark-mode #themeToggle:hover { background: #241f36; }
 </style>
 </head>
 <body>
+<script>
+(function(){
+  var saved = localStorage.getItem("trabajoya-theme");
+  var wantsDark = saved === "dark" || (!saved && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  if (wantsDark) document.body.classList.add("dark-mode");
+})();
+</script>
+<button id="themeToggle" type="button" aria-label="Cambiar modo claro/oscuro" title="Modo claro/oscuro">🌙</button>
 <div class="card">
   <h1>🔎 Alertas de Empleo</h1>
   <p class="sub">Para cualquier persona, cualquier nivel de experiencia y cualquier rubro. Anotate una vez.
@@ -751,13 +795,16 @@ function renderKit(areas, seniority, skills, country) {
       <div class="alertlinks">${linksHtml}</div>
       <p class="kit-note">Los links son de mejor esfuerzo — si el país no matchea exacto, ajustalo dentro del portal. Nunca accedemos a tus cuentas: vos activás cada alerta con tu propio login.</p>
       <div class="kit-download">
-        <span>📊 Organizá cada postulación con nuestra planilla de seguimiento</span>
-        <a href="recursos/tracker-busqueda-laboral.xlsx" download class="kit-download-btn">Descargar planilla</a>
-      </div>
-      <div class="kit-download" style="margin-top:8px">
-        <span>📈 O registrá cada resultado acá y te mandamos coaching por mail</span>
+        <span>📈 No hace falta instalar nada ni tener cuenta de Google: registrá cada resultado acá y te mandamos coaching por mail</span>
         <a href="seguimiento.html" class="kit-download-btn" style="background:#6d28d9">Registrar seguimiento</a>
       </div>
+      <div class="kit-download" style="margin-top:8px">
+        <span>📊 O si preferís una planilla propia, descargá esta</span>
+        <a href="recursos/tracker-busqueda-laboral.xlsx" download class="kit-download-btn">Descargar planilla</a>
+      </div>
+      <p class="kit-note">¿No tenés Excel ni Google? La planilla también se abre gratis con
+        <a href="https://www.libreoffice.org/download/download/" target="_blank" rel="noopener" style="color:#2563eb;font-weight:700">LibreOffice Calc</a>
+        (gratis, sin cuenta) o con una cuenta gratuita de Google Sheets. Si preferís no instalar nada, usá el botón de arriba.</p>
     </div>`;
 }
 kitPanel.addEventListener("click", async (e) => {
@@ -1164,6 +1211,18 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   revealed = false;
   revealSection.style.display = "none";
   submitBtn.style.display = "none";
+});
+
+// ---------- Modo oscuro (accesibilidad) ----------
+const themeToggle = document.getElementById("themeToggle");
+function updateThemeIcon() {
+  themeToggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+}
+updateThemeIcon();
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("trabajoya-theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+  updateThemeIcon();
 });
 </script>
 </body>

@@ -57,9 +57,38 @@
     background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 12px; padding: 12px 14px;
     font-size: 12.5px; color: #4c1d95; line-height: 1.5; margin-bottom: 6px;
   }
+  #themeToggle {
+    position: fixed; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%;
+    border: 1.5px solid #e4e4e7; background: #fff; cursor: pointer; font-size: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08); z-index: 999; transition: background .15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #themeToggle:hover { background: #f4f0ff; }
+  body.dark-mode { background: linear-gradient(135deg, #1b1730 0%, #241726 45%, #0f2028 100%); background-attachment: fixed; }
+  body.dark-mode .card { background: #191524; border-color: #2e2640; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+  body.dark-mode p.sub, body.dark-mode small { color: #a39cc0; }
+  body.dark-mode label { color: #ece7f7; }
+  body.dark-mode input, body.dark-mode select, body.dark-mode textarea {
+    background: #241f36; border-color: #3a3252; color: #ece7f7;
+  }
+  body.dark-mode input::placeholder, body.dark-mode textarea::placeholder { color: #756e8c; }
+  body.dark-mode input:focus, body.dark-mode select:focus, body.dark-mode textarea:focus { background: #2a2440; }
+  body.dark-mode #msg.ok { background: #0f2e22; color: #6ee7b7; border-color: #14532d; }
+  body.dark-mode #msg.err { background: #341015; color: #fca5a5; border-color: #7f1d1d; }
+  body.dark-mode .info-box { background: #201a30; border-color: #3a2f56; color: #d8b4fe; }
+  body.dark-mode #themeToggle { background: #191524; border-color: #3a3252; color: #ece7f7; }
+  body.dark-mode #themeToggle:hover { background: #241f36; }
 </style>
 </head>
 <body>
+<script>
+(function(){
+  var saved = localStorage.getItem("trabajoya-theme");
+  var wantsDark = saved === "dark" || (!saved && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  if (wantsDark) document.body.classList.add("dark-mode");
+})();
+</script>
+<button id="themeToggle" type="button" aria-label="Cambiar modo claro/oscuro" title="Modo claro/oscuro">🌙</button>
 <div class="card">
   <a class="backlink" href="index.html">← Volver al formulario de alertas</a>
   <h1>📊 Registrar seguimiento</h1>
@@ -188,6 +217,18 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   document.getElementById("fechaRespuesta").value = "";
   document.getElementById("motivo").value = "";
   document.getElementById("notas").value = "";
+});
+
+// ---------- Modo oscuro (accesibilidad) ----------
+const themeToggle = document.getElementById("themeToggle");
+function updateThemeIcon() {
+  themeToggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+}
+updateThemeIcon();
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("trabajoya-theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+  updateThemeIcon();
 });
 </script>
 </body>
