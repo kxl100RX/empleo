@@ -133,6 +133,9 @@
     user-select: none; transition: all .15s;
   }
   .chip.suggested:hover { background: #fef3c7; }
+  .area-suggest-item:hover { background: #f5f2ff; }
+  body.dark-mode #areaSuggestList { background: #1e1a2e; border-color: #3a3252; color: #e5e0f5; }
+  body.dark-mode .area-suggest-item:hover { background: #2a2440; }
   .chip.suggested.confirmed {
     background: #d1fae5; color: #065f46; border: 1.5px solid #6ee7b7;
   }
@@ -317,10 +320,10 @@
     </select>
   </div>
   <h1 data-i18n="hero_title">🔎 Dejá de buscar. Empezá a recibir.</h1>
-  <p class="sub" data-i18n="hero_sub">Conectamos con los portales de empleo más grandes del mundo y también con publicaciones
-     que nunca llegan a esos portales. Vos te anotás una vez, para cualquier nivel de experiencia y
-     cualquier rubro, y nosotros te avisamos por mail las ofertas que matchean con tu perfil, tu nivel,
-     tus idiomas y dónde querés trabajar.</p>
+  <p class="sub" data-i18n="hero_sub">Buscamos en los portales de empleo más grandes (LinkedIn, Indeed, Computrabajo y otros)
+     <b>y además</b> rastreamos avisos que las empresas publican directo en su web o redes sociales y nunca suben a esos
+     portales — así te llegan ofertas que en otros buscadores no vas a ver. Te anotás una sola vez, para cualquier nivel
+     de experiencia y cualquier rubro, y te avisamos por mail las que matchean con tu perfil.</p>
   <div class="value-strip">
     <span data-i18n="chip_free">✅ 100% gratis, para siempre</span>
     <span data-i18n="chip_nocard">🔒 Sin tarjeta para anotarte</span>
@@ -333,27 +336,28 @@
       <label><span class="stepnum">1</span><span data-i18n="step1_label">¿Dónde y cómo querés trabajar?</span> <span class="hint" data-i18n="step1_hint">(obligatorio)</span></label>
       <small style="margin-top:0;margin-bottom:8px" data-i18n="step1_small">Esto no lo podemos adivinar de tu CV — elegilo para que las alertas te sirvan de verdad.</small>
       <div class="modegrid" id="modeGrid"></div>
-      <input type="text" id="country" data-i18n-ph="ph_country" placeholder="Tu país (ej: Argentina) — opcional, mejora el match" style="margin-top:10px">
+      <input type="text" id="country" data-i18n-ph="ph_country" placeholder="Tu país (ej: Argentina) — si lo dejás vacío, buscamos sin filtrar por país" style="margin-top:10px">
       <div id="localityBlock" style="margin-top:10px">
-        <input type="text" id="city" data-i18n-ph="ph_city" placeholder="Tu ciudad o barrio (ej: Lanús) — opcional, mejora el match presencial">
+        <input type="text" id="city" data-i18n-ph="ph_city" placeholder="Tu ciudad o barrio (ej: Lanús) — si lo dejás vacío, no filtramos por distancia">
         <select id="travelRadius" style="margin-top:8px">
-          <option value="cualquiera" selected data-i18n="radius_any">¿A qué distancia estás dispuesto/a a viajar? — no importa</option>
-          <option value="zona" data-i18n="radius_zone">Solo mi zona / barrio</option>
-          <option value="15km" data-i18n="radius_15">Hasta 15 km</option>
-          <option value="40km" data-i18n="radius_40">Hasta 40 km</option>
-          <option value="region" data-i18n="radius_region">Toda la ciudad / región</option>
+          <option value="cualquiera" selected data-i18n="radius_any">Distancia para trabajos presenciales — no importa</option>
+          <option value="zona" data-i18n="radius_zone">En mi misma ciudad / barrio</option>
+          <option value="15km" data-i18n="radius_15">Ciudades aledañas (hasta 30 km)</option>
+          <option value="40km" data-i18n="radius_40">Más lejos, hasta 30-60 km</option>
+          <option value="region" data-i18n="radius_region">Toda la región, sin límite</option>
         </select>
-        <small data-i18n="step1_small2">Solo aplica a trabajos presenciales — para remoto no hace falta.</small>
+        <small data-i18n="step1_small2">Solo aplica a trabajos presenciales o híbridos — para remoto no hace falta completar esto. País y ciudad son opcionales: si no los completás, igual te mandamos ofertas remotas y no filtramos por ubicación.</small>
       </div>
     </div>
 
     <div class="step s1">
       <label><span class="stepnum">2</span><span data-i18n="step2_label">Tu CV</span> <span class="hint" data-i18n="step2_hint">(subilo o pegalo — completamos el resto del formulario solos)</span></label>
+      <small style="margin-top:0;margin-bottom:8px" data-i18n="step2_small">Si ya tenés tu CV armado, subilo abajo. Si necesitás armarlo o mejorarlo, usá "Plantillas de CV" — son opcionales y no hace falta usarlas si ya tenés uno.</small>
       <div class="cv-cta">
         <div class="filerow">
-          <label class="filebtn" for="fileInput" data-i18n="upload_cv">📎 Subir CV (PDF, Word o TXT)</label>
+          <label class="filebtn" for="fileInput" data-i18n="upload_cv">📎 Ya tengo mi CV: subirlo (PDF, Word o TXT)</label>
           <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt">
-          <button type="button" class="tplbtn" id="tplToggle" data-i18n="cv_templates">📄 Plantillas de CV (ATS)</button>
+          <button type="button" class="tplbtn" id="tplToggle" data-i18n="cv_templates">📄 No tengo CV armado: ver plantillas (ATS)</button>
         </div>
         <span id="fileStatus"></span>
         <div class="tplpanel" id="tplPanel">
@@ -398,29 +402,10 @@
 
       <div class="step s3">
         <label><span class="stepnum">4</span><span data-i18n="step4_label">Rubro / área en la que buscás trabajo</span> <span class="hint" data-i18n="step4_hint">(elegí uno o varios)</span></label>
-        <input type="text" id="areaInput" list="areaList" data-i18n-ph="ph_area" placeholder="Escribí un rubro y presioná Enter — ej: Programación, Salud, Ventas... podés sumar varios">
-        <datalist id="areaList">
-          <option value="Programación / IT">
-          <option value="Diseño">
-          <option value="Marketing">
-          <option value="Datos">
-          <option value="Administración">
-          <option value="Salud">
-          <option value="Educación">
-          <option value="Gastronomía">
-          <option value="Construcción">
-          <option value="Logística">
-          <option value="Ventas">
-          <option value="Atención al cliente">
-          <option value="Recursos Humanos">
-          <option value="Legal">
-          <option value="Finanzas">
-          <option value="Ingeniería">
-          <option value="Turismo">
-          <option value="Manufactura">
-          <option value="Agricultura">
-          <option value="Seguridad">
-        </datalist>
+        <div style="position:relative">
+          <input type="text" id="areaInput" autocomplete="off" data-i18n-ph="ph_area" placeholder="Escribí un rubro y presioná Enter — ej: Programación, Salud, Ventas... podés sumar varios">
+          <div id="areaSuggestList" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid #e5e0f5;border-radius:10px;margin-top:4px;max-height:220px;overflow-y:auto;box-shadow:0 6px 18px rgba(0,0,0,.12)"></div>
+        </div>
         <div class="chips" id="areaChips"></div>
         <div class="auto-hint" id="areaAutoHint" style="display:none">✅ Detectado en tu CV — sacá los que no apliquen</div>
         <small>Cualquier rubro sirve — no está limitado a tecnología. Enter para agregar, tocá ✕ para quitar.</small>
@@ -489,25 +474,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const I18N = {
   en: {
     hero_title: "🔎 Stop searching. Start receiving.",
-    hero_sub: "We connect with the world's biggest job boards, plus postings that never reach them. Sign up once, for any experience level and any industry, and we'll email you the offers that match your profile, your level, your languages, and where you want to work.",
+    hero_sub: "We search the world's biggest job boards (LinkedIn, Indeed, and others) <b>and</b> we also track listings that companies post directly on their own site or social media and never upload to those boards — so you get offers you won't find anywhere else. Sign up once, for any experience level and any industry, and we'll email you the offers that match your profile.",
     chip_free: "✅ 100% free, forever",
     chip_nocard: "🔒 No card required to sign up",
     chip_premium: "⚡ Premium is an optional extra, later",
     step1_label: "Where and how do you want to work?",
     step1_hint: "(required)",
     step1_small: "We can't guess this from your CV — pick it so the alerts actually work for you.",
-    step1_small2: "Only applies to on-site jobs — not needed for remote.",
-    ph_country: "Your country (e.g. Argentina) — optional, improves matching",
-    ph_city: "Your city or neighborhood — optional, improves on-site matching",
-    radius_any: "How far are you willing to travel? — doesn't matter",
-    radius_zone: "Only my neighborhood/area",
-    radius_15: "Up to 15 km",
-    radius_40: "Up to 40 km",
-    radius_region: "Whole city / region",
+    step1_small2: "Only applies to on-site or hybrid jobs — not needed for remote. Country and city are optional: if you leave them blank, we still send remote offers and don't filter by location.",
+    ph_country: "Your country (e.g. Argentina) — leave blank to skip country filtering",
+    ph_city: "Your city or neighborhood — leave blank to skip distance filtering",
+    radius_any: "Distance for on-site jobs — doesn't matter",
+    radius_zone: "In my own city/neighborhood",
+    radius_15: "Nearby cities (up to 30 km)",
+    radius_40: "Farther, up to 30-60 km",
+    radius_region: "Whole region, no limit",
     step2_label: "Your CV",
     step2_hint: "(upload it or paste it — we fill out the rest of the form for you)",
-    upload_cv: "📎 Upload CV (PDF, Word or TXT)",
-    cv_templates: "📄 ATS CV templates",
+    step2_small: "If you already have a CV, upload it below. If you need to build or improve one, use \"CV templates\" — they're optional, you don't need them if you already have one.",
+    upload_cv: "📎 I already have a CV: upload it (PDF, Word or TXT)",
+    cv_templates: "📄 No CV yet: see templates (ATS)",
     ph_cv: "...or paste your CV text here directly. We analyze it to fill in your email, industry, level, languages and skills — you review and confirm everything below.",
     skip_cv: "I'd rather fill in the data manually, without a CV →",
     step3_label: "Your email",
@@ -843,7 +829,7 @@ function generarTips(areas, seniority, skills) {
     if (roles.size) {
       tips.push({
         type: "rol",
-        text: `Con tu perfil en <b>${area}</b>, también podrías aplicar a roles como ${Array.from(roles).slice(0,3).join(", ")}.`
+        text: `Tip: agregá estas palabras clave en el paso 6 para aparecer también en más búsquedas dentro de <b>${area}</b>: ${Array.from(roles).slice(0,3).join(", ")}.`
       });
     }
     const certs = data.certs
@@ -1089,11 +1075,44 @@ suggestedPreview.addEventListener("click", (e) => {
 });
 
 // ---------- Rubro / área (multi-selección con chips) ----------
+const AREA_OPTIONS = [
+  "Programación / IT", "Diseño", "Marketing", "Datos", "Administración", "Salud",
+  "Educación", "Gastronomía", "Construcción", "Logística", "Ventas", "Atención al cliente",
+  "Recursos Humanos", "Legal", "Finanzas", "Ingeniería", "Turismo", "Manufactura",
+  "Agricultura", "Seguridad"
+];
 const selectedAreas = new Set();
 const areaInput = document.getElementById("areaInput");
 const areaChips = document.getElementById("areaChips");
 const areaAutoHint = document.getElementById("areaAutoHint");
+const areaSuggestList = document.getElementById("areaSuggestList");
 let areaUserTouched = false;
+
+function renderAreaSuggestions() {
+  const q = areaInput.value.trim().toLowerCase();
+  const options = AREA_OPTIONS.filter(o => !selectedAreas.has(o) && (!q || o.toLowerCase().includes(q)));
+  if (!options.length) { areaSuggestList.style.display = "none"; areaSuggestList.innerHTML = ""; return; }
+  areaSuggestList.innerHTML = options.map(o =>
+    `<div class="area-suggest-item" data-area="${o}" style="padding:9px 12px;cursor:pointer;font-size:14px">${o}</div>`
+  ).join("");
+  areaSuggestList.style.display = "block";
+}
+areaInput.addEventListener("focus", renderAreaSuggestions);
+areaInput.addEventListener("input", renderAreaSuggestions);
+// mousedown (no click) para que dispare antes del blur del input
+areaSuggestList.addEventListener("mousedown", (e) => {
+  const item = e.target.closest(".area-suggest-item");
+  if (!item) return;
+  e.preventDefault();
+  areaUserTouched = true;
+  addArea(item.dataset.area);
+  areaInput.value = "";
+  areaSuggestList.style.display = "none";
+  areaInput.focus();
+});
+document.addEventListener("click", (e) => {
+  if (e.target !== areaInput && !areaSuggestList.contains(e.target)) areaSuggestList.style.display = "none";
+});
 
 function renderAreaChips() {
   areaChips.innerHTML = Array.from(selectedAreas)
@@ -1313,6 +1332,7 @@ LANGUAGES.forEach(l => {
 const MODES = [
   { code: "remoto_mundial", label: "🌍 Remoto, cualquier país" },
   { code: "remoto_pais", label: "🏠 Remoto en mi país" },
+  { code: "hibrido", label: "🔀 Híbrido (remoto + presencial)" },
   { code: "presencial", label: "🏢 Presencial en mi país" },
   { code: "cualquiera", label: "🤷 Cualquiera de todas" }
 ];
@@ -1360,7 +1380,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   const city = document.getElementById("city").value.trim();
   const travelRadius = document.getElementById("travelRadius").value;
 
-  const { error } = await sb.from("users").insert({
+  const { error } = await sb.from("users").upsert({
     email,
     keywords,
     skills,
@@ -1372,16 +1392,14 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     city: city || null,
     travel_radius: travelRadius,
     seniority
-  });
+  }, { onConflict: "email" });
 
   btn.disabled = false;
   btn.textContent = "Activar mis alertas gratis";
 
   if (error) {
     msg.className = "err";
-    msg.textContent = error.message.includes("duplicate")
-      ? "Ese email ya está anotado. Vas a seguir recibiendo alertas."
-      : "Ocurrió un error: " + error.message;
+    msg.textContent = "Ocurrió un error: " + error.message;
     return;
   }
 
@@ -1391,6 +1409,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   const modoTexto = {
     remoto_mundial: "remotas de cualquier país",
     remoto_pais: "remotas dentro de tu país",
+    hibrido: "híbridas (remoto + presencial)",
     presencial: "presenciales en tu país",
     cualquiera: "remotas o presenciales, sin restricción"
   }[selectedMode];
