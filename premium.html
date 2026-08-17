@@ -149,6 +149,8 @@
           <li>Carta de presentación por postulación</li>
           <li>Simulador de entrevista</li>
           <li>Diagnóstico mensual de tu búsqueda</li>
+          <li>Tendencias y tips de tu rubro, según tu CV</li>
+          <li>Guion de negociación salarial personalizado</li>
         </ul>
       </div>
     </div>
@@ -182,6 +184,8 @@
       <div class="tab" data-f="letter">✉️ Carta de presentación</div>
       <div class="tab" data-f="interview">🎤 Simulador de entrevista</div>
       <div class="tab" data-f="coaching">🧭 Diagnóstico profundo</div>
+      <div class="tab" data-f="trends">📈 Tendencias de tu rubro</div>
+      <div class="tab" data-f="salary">💰 Negociación salarial</div>
     </div>
 
     <div class="feature active" id="f-cv">
@@ -211,6 +215,17 @@
     <div class="feature" id="f-coaching">
       <p class="sub" style="margin-top:0">Usa tu historial de postulaciones cargado en "Registrar seguimiento" y tu CV para armarte un diagnóstico y un plan de 3 pasos.</p>
       <button class="action" data-action="deep_coaching">Generar diagnóstico</button>
+    </div>
+
+    <div class="feature" id="f-trends">
+      <p class="sub" style="margin-top:0">Basado en tu CV y tu rubro: qué se está pidiendo ahora, qué tendencia te conviene saber y qué te falta sumar para no quedar atrás.</p>
+      <button class="action" data-action="industry_trends">Ver tendencias de mi rubro</button>
+    </div>
+
+    <div class="feature" id="f-salary">
+      <label>Pegá la oferta o el contexto de la propuesta que recibiste</label>
+      <textarea id="ofertaSalary" placeholder="Ej: te ofrecieron tal puesto por tal monto, o pegá la descripción del puesto..."></textarea>
+      <button class="action" data-action="salary_negotiation" data-src="ofertaSalary">Armar guion de negociación</button>
     </div>
 
     <div class="result-box" id="resultBox"></div>
