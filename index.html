@@ -242,6 +242,13 @@
   }
   .premium-banner-btn:hover { background: #f4f0ff; }
   body.dark-mode .premium-banner { border-color: #6d28d9; }
+  .value-strip { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0 18px; }
+  .value-strip span {
+    font-size: 12px; font-weight: 700; color: #15803d;
+    background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.35);
+    padding: 5px 10px; border-radius: 999px;
+  }
+  body.dark-mode .value-strip span { color: #86efac; background: rgba(34,197,94,.15); }
 
   #themeToggle {
     position: fixed; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%;
@@ -295,6 +302,11 @@
      que nunca llegan a esos portales. Vos te anotás una vez, para cualquier nivel de experiencia y
      cualquier rubro, y nosotros te avisamos por mail las ofertas que matchean con tu perfil, tu nivel,
      tus idiomas y dónde querés trabajar.</p>
+  <div class="value-strip">
+    <span>✅ 100% gratis, para siempre</span>
+    <span>🔒 Sin tarjeta para anotarte</span>
+    <span>⚡ Premium es un extra opcional, después</span>
+  </div>
 
   <form id="form">
     <div class="step s7">
@@ -302,6 +314,17 @@
       <small style="margin-top:0;margin-bottom:8px">Esto no lo podemos adivinar de tu CV — elegilo para que las alertas te sirvan de verdad.</small>
       <div class="modegrid" id="modeGrid"></div>
       <input type="text" id="country" placeholder="Tu país (ej: Argentina) — opcional, mejora el match" style="margin-top:10px">
+      <div id="localityBlock" style="margin-top:10px">
+        <input type="text" id="city" placeholder="Tu ciudad o barrio (ej: Lanús) — opcional, mejora el match presencial">
+        <select id="travelRadius" style="margin-top:8px">
+          <option value="cualquiera" selected>¿A qué distancia estás dispuesto/a a viajar? — no importa</option>
+          <option value="zona">Solo mi zona / barrio</option>
+          <option value="15km">Hasta 15 km</option>
+          <option value="40km">Hasta 40 km</option>
+          <option value="region">Toda la ciudad / región</option>
+        </select>
+        <small>Solo aplica a trabajos presenciales — para remoto no hace falta.</small>
+      </div>
     </div>
 
     <div class="step s1">
@@ -416,7 +439,7 @@
       </div>
     </div>
 
-    <button type="submit" id="btn" style="display:none">Anotarme</button>
+    <button type="submit" id="btn" style="display:none">Activar mis alertas gratis</button>
     <div id="msg"></div>
     <div id="kitPanel"></div>
   </form>
@@ -844,7 +867,7 @@ function renderKit(areas, seniority, skills, country) {
           <div class="premium-col free">
             <div class="premium-col-title">GRATIS PARA SIEMPRE</div>
             <ul>
-              <li>Alertas de empleo cada 5 horas</li>
+              <li>Alertas de empleo cada 2 horas</li>
               <li>Kit de búsqueda por portal</li>
               <li>Registro de seguimiento</li>
               <li>Coaching básico por mail</li>
@@ -1194,6 +1217,8 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   const skills = Array.from(new Set([...detectadas, ...confirmedExtra]));
   const languages = Array.from(selectedLangs);
   const country = document.getElementById("country").value.trim();
+  const city = document.getElementById("city").value.trim();
+  const travelRadius = document.getElementById("travelRadius").value;
 
   const { error } = await sb.from("users").insert({
     email,
@@ -1204,11 +1229,13 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     languages,
     work_mode: selectedMode,
     country: country || null,
+    city: city || null,
+    travel_radius: travelRadius,
     seniority
   });
 
   btn.disabled = false;
-  btn.textContent = "Anotarme";
+  btn.textContent = "Activar mis alertas gratis";
 
   if (error) {
     msg.className = "err";
@@ -1237,7 +1264,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     `Vamos a buscarte ofertas ${modoTexto}` +
     (skills.length ? ` que matcheen con: <b>${skills.join(", ")}</b>.` : ".") +
     ` Por los idiomas que hablás, tenés alcance en: ${regiones}.` +
-    ` Revisá tu correo cada tanto (y spam la primera vez) — el robot corre cada 5 horas.`;
+    ` Revisá tu correo cada tanto (y spam la primera vez) — el robot corre cada 2 horas.`;
 
   renderKit(areas, seniority, skills, country);
 
@@ -1261,6 +1288,8 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     c.classList.toggle("active", c.dataset.code === "es");
     c.classList.toggle("lang-active", c.dataset.code === "es");
   });
+  document.getElementById("city").value = "";
+  document.getElementById("travelRadius").value = "cualquiera";
   selectedMode = "remoto_mundial";
   [...modeGrid.children].forEach(c => {
     c.classList.toggle("active", c.dataset.code === "remoto_mundial");
