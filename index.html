@@ -320,6 +320,7 @@
     <span>🔒 Sin tarjeta para anotarte</span>
     <span>⚡ Premium es un extra opcional, después</span>
   </div>
+  <p id="liveStats" style="font-size:12.5px;color:#8a86a8;margin:0 0 14px;min-height:16px"></p>
 
   <form id="form">
     <div class="step s7">
@@ -452,6 +453,11 @@
       </div>
     </div>
 
+    <label id="consentRow" style="display:none;align-items:flex-start;gap:8px;font-size:12.5px;color:#8a86a8;margin:12px 0 4px;cursor:pointer">
+      <input type="checkbox" id="consent" style="margin-top:3px" required>
+      <span>Acepto que trabajoya guarde mi email y mi CV para buscarme ofertas de empleo, según la
+        <a href="privacidad.html" target="_blank" style="color:inherit;text-decoration:underline">Política de Privacidad</a>.</span>
+    </label>
     <button type="submit" id="btn" style="display:none">Activar mis alertas gratis</button>
     <div id="msg"></div>
     <div id="kitPanel"></div>
@@ -469,6 +475,24 @@ const SUPABASE_URL = "https://xutlopwenmspcougvtsv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dGxvcHdlbm1zcGNvdWd2dHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Mzc2NTEsImV4cCI6MjEwMjQxMzY1MX0.s7mavW51sTjCupiq6LkbHT1YSpp0dakDsm5FS0HgL48";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Estadísticas reales (no inventadas): se leen de una función de solo
+// lectura en Supabase que devuelve conteos agregados, sin datos
+// personales de nadie. Si falla o todavía no hay datos, no mostramos nada
+// (mejor no decir nada que mostrar un numero falso).
+(async function loadLiveStats() {
+  try {
+    const { data, error } = await sb.rpc("public_stats");
+    if (error || !data || !data[0]) return;
+    const s = data[0];
+    const el = document.getElementById("liveStats");
+    if (!el) return;
+    const partes = [];
+    if (s.usuarios_activos > 0) partes.push(`👥 ${s.usuarios_activos} personas ya recibiendo alertas`);
+    if (s.ofertas_enviadas_semana > 0) partes.push(`📬 ${s.ofertas_enviadas_semana} ofertas enviadas esta semana`);
+    if (partes.length) el.textContent = partes.join("  ·  ");
+  } catch (e) { /* silencioso: si falla, simplemente no mostramos la franja */ }
+})();
 
 if (window.pdfjsLib) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
@@ -1076,12 +1100,14 @@ function autocompletarIdiomas() {
 // ---------- Revelar el resto del formulario recién cuando hay CV (o skip manual) ----------
 const revealSection = document.getElementById("revealSection");
 const submitBtn = document.getElementById("btn");
+const consentRow = document.getElementById("consentRow");
 let revealed = false;
 function revealFields() {
   if (revealed) return;
   revealed = true;
   revealSection.style.display = "block";
   submitBtn.style.display = "block";
+  consentRow.style.display = "flex";
 }
 document.getElementById("skipCvLink").addEventListener("click", (e) => {
   e.preventDefault();
@@ -1218,6 +1244,12 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = document.getElementById("btn");
   const msg = document.getElementById("msg");
+  const consent = document.getElementById("consent");
+  if (consent && !consent.checked) {
+    msg.innerHTML = '<div style="color:#b91c1c;font-size:13px;margin-top:8px">Para continuar necesitamos que aceptes la Política de Privacidad (el check de arriba).</div>';
+    consent.focus();
+    return;
+  }
   btn.disabled = true;
   btn.textContent = "Enviando...";
 
@@ -1316,6 +1348,8 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   revealed = false;
   revealSection.style.display = "none";
   submitBtn.style.display = "none";
+  consentRow.style.display = "none";
+  document.getElementById("consent").checked = false;
 });
 
 // ---------- Modo oscuro (accesibilidad) ----------
