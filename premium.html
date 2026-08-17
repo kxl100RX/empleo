@@ -40,6 +40,23 @@
   }
   .plan .price { font-size: 28px; font-weight: 800; color: #18181b; margin: 6px 0; }
   .plan .price small { font-size: 13px; font-weight: 500; color: #71717a; }
+  .plan .price-day { font-size: 11.5px; color: #a1a1aa; margin-top: -2px; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+  .compare-col { border-radius: 12px; padding: 14px 16px; border: 1.5px solid; }
+  .compare-col.free { background: #f0fdf4; border-color: #bbf7d0; }
+  .compare-col.pago { background: #faf5ff; border-color: #e9d5ff; }
+  .compare-title { font-size: 11.5px; font-weight: 800; letter-spacing: .3px; margin-bottom: 8px; }
+  .compare-col.free .compare-title { color: #15803d; }
+  .compare-col.pago .compare-title { color: #7e22ce; }
+  .compare-col ul { list-style: none; margin: 0; padding: 0; }
+  .compare-col li { font-size: 12.5px; color: #27272a; line-height: 1.6; padding-left: 18px; position: relative; margin-bottom: 4px; }
+  .compare-col.free li::before { content: "✓"; position: absolute; left: 0; color: #16a34a; font-weight: 800; }
+  .compare-col.pago li::before { content: "★"; position: absolute; left: 0; color: #a855f7; font-weight: 800; }
+  body.dark-mode .compare-col.free { background: #0f2e22; border-color: #14532d; }
+  body.dark-mode .compare-col.pago { background: #201a30; border-color: #3a2f56; }
+  body.dark-mode .compare-col li { color: #ece7f7; }
+  body.dark-mode .plan .price-day { color: #756e8c; }
   .plan button, .plan a.btn {
     display: inline-block; margin-top: 10px; width: 100%; padding: 12px; border: none; border-radius: 10px;
     background: linear-gradient(90deg,#6d28d9,#db2777); color: #fff; font-size: 14.5px; font-weight: 800;
@@ -110,9 +127,31 @@
   <div class="card">
     <a class="backlink" href="index.html">← Volver a las alertas</a>
     <h1>⚡ trabajoya Premium</h1>
-    <p class="sub">Las alertas y el kit de búsqueda siguen siendo 100% gratis, para siempre. Premium suma
-      herramientas de inteligencia artificial que hacen el trabajo pesado por vos: analizar tu CV contra cada
-      oferta, escribirte la carta de presentación, simular una entrevista y armarte un diagnóstico profundo.</p>
+    <p class="sub">Las alertas y el kit de búsqueda siguen siendo 100% gratis, para siempre — eso no cambia nunca.
+      Premium es un extra opcional: un asistente de IA que te acompaña <b>postulación por postulación</b>, mientras
+      seguís buscando activamente. Cada oferta nueva que encontrás, la IA te dice qué tan bien matcheás, te escribe
+      una carta distinta para esa oferta puntual, te prepara para la entrevista y, una vez al mes, con todo lo que
+      fuiste cargando en seguimiento, te arma un diagnóstico de qué está funcionando y qué no.</p>
+
+    <div class="compare">
+      <div class="compare-col free">
+        <div class="compare-title">SIEMPRE GRATIS</div>
+        <ul>
+          <li>Alertas de empleo cada 5 horas</li>
+          <li>Kit de búsqueda por portal</li>
+          <li>Registro de seguimiento</li>
+        </ul>
+      </div>
+      <div class="compare-col pago">
+        <div class="compare-title">CADA MES CON PREMIUM</div>
+        <ul>
+          <li>Match de CV con cada oferta nueva</li>
+          <li>Carta de presentación por postulación</li>
+          <li>Simulador de entrevista</li>
+          <li>Diagnóstico mensual de tu búsqueda</li>
+        </ul>
+      </div>
+    </div>
 
     <label>Tu email <span style="color:#a78bfa;font-weight:600">(el mismo con el que te anotaste a las alertas)</span></label>
     <input type="email" id="email" placeholder="vos@ejemplo.com">
@@ -121,11 +160,13 @@
       <div class="plan">
         <div>🇦🇷 Argentina</div>
         <div class="price">$8.000<small> ARS / mes</small></div>
+        <div class="price-day">≈ $270 ARS / día</div>
         <button id="btnAR">Pagar con Mercado Pago</button>
       </div>
       <div class="plan">
         <div>🌎 Resto del mundo</div>
         <div class="price">US$8<small> / mes</small></div>
+        <div class="price-day">≈ US$0,27 / día</div>
         <button id="btnIntl">Pagar en dólares/euros</button>
       </div>
     </div>

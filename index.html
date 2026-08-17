@@ -213,6 +213,36 @@
   }
   .kit-download-btn:hover { background: #15803d; }
 
+  .premium-banner {
+    margin-top: 20px; padding: 20px 22px; border-radius: 16px;
+    background: linear-gradient(135deg,#2e1065,#4c1d95 45%,#831843);
+    border: 1.5px solid #7c3aed; animation: fadein .25s ease; position: relative; overflow: hidden;
+  }
+  .premium-banner-title { font-weight: 800; font-size: 16px; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .premium-banner-sub { font-size: 12.5px; color: #e9d5ff; margin: 0 0 14px; line-height: 1.55; }
+  .premium-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 560px) { .premium-compare { grid-template-columns: 1fr; } }
+  .premium-col {
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 12px 14px;
+  }
+  .premium-col-title { font-size: 12px; font-weight: 800; letter-spacing: .3px; margin-bottom: 8px; }
+  .premium-col.free .premium-col-title { color: #86efac; }
+  .premium-col.pago .premium-col-title { color: #f0abfc; }
+  .premium-col ul { list-style: none; margin: 0; padding: 0; }
+  .premium-col li { font-size: 12.5px; color: #f1eefc; line-height: 1.6; padding-left: 18px; position: relative; margin-bottom: 4px; }
+  .premium-col.free li::before { content: "✓"; position: absolute; left: 0; color: #4ade80; font-weight: 800; }
+  .premium-col.pago li::before { content: "★"; position: absolute; left: 0; color: #f0abfc; font-weight: 800; }
+  .premium-banner-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .premium-banner-price { font-size: 12.5px; color: #e9d5ff; }
+  .premium-banner-price b { color: #fff; font-size: 15px; }
+  .premium-banner-btn {
+    background: #fff; color: #6d28d9; border: none; padding: 11px 20px; border-radius: 10px;
+    font-size: 13.5px; font-weight: 800; text-decoration: none; white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  }
+  .premium-banner-btn:hover { background: #f4f0ff; }
+  body.dark-mode .premium-banner { border-color: #6d28d9; }
+
   #themeToggle {
     position: fixed; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%;
     border: 1.5px solid #e4e4e7; background: #fff; cursor: pointer; font-size: 18px;
@@ -805,9 +835,34 @@ function renderKit(areas, seniority, skills, country) {
       <p class="kit-note">¿No tenés Excel ni Google? La planilla también se abre gratis con
         <a href="https://www.libreoffice.org/download/download/" target="_blank" rel="noopener" style="color:#2563eb;font-weight:700">LibreOffice Calc</a>
         (gratis, sin cuenta) o con una cuenta gratuita de Google Sheets. Si preferís no instalar nada, usá el botón de arriba.</p>
-      <div class="kit-download" style="margin-top:8px">
-        <span>⚡ ¿Querés que la IA te analice el CV, te escriba la carta de presentación y te simule una entrevista? Eso está en Premium (todo lo demás sigue gratis)</span>
-        <a href="premium.html" class="kit-download-btn" style="background:linear-gradient(90deg,#6d28d9,#db2777)">Ver Premium</a>
+      <div class="premium-banner">
+        <div class="premium-banner-title">⚡ trabajoya Premium</div>
+        <p class="premium-banner-sub">Todo lo de arriba sigue 100% gratis para siempre. Premium es un extra opcional:
+          un asistente de IA que te acompaña postulación por postulación, mientras seguís buscando.</p>
+        <div class="premium-compare">
+          <div class="premium-col free">
+            <div class="premium-col-title">GRATIS PARA SIEMPRE</div>
+            <ul>
+              <li>Alertas de empleo cada 5 horas</li>
+              <li>Kit de búsqueda por portal</li>
+              <li>Registro de seguimiento</li>
+              <li>Coaching básico por mail</li>
+            </ul>
+          </div>
+          <div class="premium-col pago">
+            <div class="premium-col-title">CADA MES CON PREMIUM</div>
+            <ul>
+              <li>Match de tu CV con cada oferta nueva</li>
+              <li>Carta de presentación distinta para cada postulación</li>
+              <li>Simulador de entrevista antes de cada llamado</li>
+              <li>Diagnóstico mensual de tu búsqueda</li>
+            </ul>
+          </div>
+        </div>
+        <div class="premium-banner-footer">
+          <div class="premium-banner-price"><b>$8.000 ARS</b> o <b>US$8</b> / mes — menos de $270/día en Argentina</div>
+          <a href="premium.html" class="premium-banner-btn">Ver Premium →</a>
+        </div>
       </div>
     </div>`;
 }
