@@ -2,7 +2,7 @@ name: Buscar y notificar empleos
 
 on:
   schedule:
-    - cron: '0 */5 * * *'   # cada 5 horas
+    - cron: '0 */2 * * *'   # cada 2 horas
   workflow_dispatch:         # permite ejecutarlo manualmente con un boton
 
 jobs:
