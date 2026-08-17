@@ -654,6 +654,35 @@ def fuera_de_zona(job, user):
     return normalize_text(city) not in normalize_text(location)
 
 
+SCAM_SIGNALS = [
+    ("pago para postularte", ["pagar la inscripcion", "abona un arancel", "deposito para reservar",
+                               "envianos $", "envianos usd", "cuota de ingreso", "comprar el kit",
+                               "inversion inicial", "vacante paga un bono de ingreso"]),
+    ("esquema piramidal / multinivel", ["multinivel", "reclutamiento de red", "gana por cada persona que sumes",
+                                         "sistema de referidos ilimitado", "libertad financiera",
+                                         "se tu propio jefe sin experiencia"]),
+    ("promesas poco creibles", ["gana dinero facil", "gana dinero rapido", "trabaja 2 horas y gana",
+                                 "sin experiencia gana miles", "ingresos ilimitados desde tu casa"]),
+    ("pide datos sensibles antes de una entrevista", ["envia tu dni por whatsapp", "numero de cuenta bancaria",
+                                                        "envia una foto de tu documento", "clave bancaria"]),
+]
+
+
+def senales_de_alerta(job):
+    """Heuristica simple y conservadora (nunca oculta la oferta, solo
+    advierte) para detectar patrones tipicos de estafas o "trabajo desde
+    casa" fraudulento, muy comunes en portales de LatAm (Computrabajo tiene
+    denuncias publicas de este tipo). Preferimos falsos negativos a falsos
+    positivos: solo marca frases bastante explicitas, no rechaza por
+    palabras sueltas como "remoto" o "flexible"."""
+    t = normalize_text(job.get("title", "") + " " + job.get("desc", ""))
+    razones = []
+    for etiqueta, frases in SCAM_SIGNALS:
+        if any(normalize_text(f) in t for f in frases):
+            razones.append(etiqueta)
+    return razones
+
+
 def perfil_resumen(user):
     langs = user.get("languages") or []
     mode = user.get("work_mode") or "remoto_mundial"
@@ -677,11 +706,21 @@ def perfil_resumen(user):
 def send_email(to_email, jobs, user):
     rows = ""
     for j in jobs:
+        razones = senales_de_alerta(j)
+        warning_html = ""
+        if razones:
+            warning_html = (
+                f'<p style="margin:6px 0 0;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;'
+                f'font-size:12px;border-radius:6px;padding:6px 8px">'
+                f'⚠️ Señales de alerta: {", ".join(razones)}. Revisá bien antes de compartir datos o pagar '
+                f"cualquier monto — un empleo real nunca te cobra a vos.</p>"
+            )
         rows += f"""
         <tr>
           <td style="padding:12px 0;border-bottom:1px solid #eee">
             <a href="{j['link']}" style="font-weight:bold;color:#2563eb;text-decoration:none">{j['title']}</a>
             <p style="margin:4px 0 0;color:#555;font-size:14px">{j['desc'][:220]}...</p>
+            {warning_html}
           </td>
         </tr>"""
     resumen = perfil_resumen(user)
