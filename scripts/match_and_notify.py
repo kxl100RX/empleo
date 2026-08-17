@@ -1,5 +1,5 @@
 """
-Corre cada 5 horas via GitHub Actions.
+Corre cada 2 horas via GitHub Actions.
 1. Lee todos los usuarios anotados en Supabase (con su rubro, nivel de
    experiencia, idiomas, modalidad y pais).
 2. Lee ofertas de portales de empleo publicos (RSS + JSON), UNA sola vez por
@@ -37,7 +37,7 @@ HEADERS = {
 }
 REQUEST_HEADERS = {"User-Agent": "alertas-empleo-bot/1.0 (+github actions, uso personal)"}
 
-# Cada feed se pide UNA sola vez por corrida del robot (cada 5hs), sin
+# Cada feed se pide UNA sola vez por corrida del robot (cada 2hs), sin
 # importar cuantos usuarios haya, para no golpear ningun portal con
 # pedidos repetidos. "lang" es el idioma predominante de esa fuente.
 # Son feeds generales (todo rubro y todo nivel), no solo tech ni solo junior.
@@ -57,6 +57,12 @@ RSS_FEEDS = [
 JSON_FEEDS = [
     {"url": "https://himalayas.app/jobs/api", "lang": "en", "kind": "himalayas"},
     {"url": "https://jobicy.com/api/v2/remote-jobs?count=50", "lang": "en", "kind": "jobicy"},
+    # API pública, gratuita, sin key ni rate limit. Cubre LATAM (incluye
+    # Argentina) con avisos remotos, hibridos Y PRESENCIALES -- es la
+    # unica fuente que hoy nos da ofertas presenciales reales, no solo
+    # remotas. Trae localidad (address_locality/address_country) que
+    # usamos para filtrar por cercania cuando el usuario cargo su ciudad.
+    {"url": "https://vacantesdigitales.com/api/list", "lang": "es", "kind": "vacantesdigitales"},
 ]
 
 # Terminos que ayudan a reconocer el nivel de experiencia de un aviso.
@@ -248,9 +254,17 @@ def send_kit_email(user):
       <p style="font-size:13px;color:#52525b;font-weight:bold;margin-bottom:6px">O abrí la búsqueda ya armada con un clic:</p>
       <table style="width:100%;border-collapse:collapse;margin-bottom:16px">{links_html}</table>
 
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:14px 16px;margin-bottom:8px">
+        <b>📈 No hace falta instalar nada ni tener cuenta de Google:</b> registrá cada resultado acá y te mandamos coaching automático por mail.<br>
+        <a href="https://kxl100rx.github.io/trabajoya/seguimiento.html" style="color:#6d28d9;font-weight:bold;text-decoration:none">Registrar seguimiento →</a>
+      </div>
+
       <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:14px 16px;margin-bottom:8px">
-        <b>📊 Planilla de seguimiento:</b> organizá cada postulación, tus alertas y tu plan de capacitación.<br>
-        <a href="{TRACKER_URL}" style="color:#16a34a;font-weight:bold;text-decoration:none">Descargar planilla →</a>
+        <b>📊 O si preferís una planilla propia:</b> organizá cada postulación, tus alertas y tu plan de capacitación.<br>
+        <a href="{TRACKER_URL}" style="color:#16a34a;font-weight:bold;text-decoration:none">Descargar planilla →</a><br>
+        <span style="font-size:12px;color:#666">¿No tenés Excel ni Google? Se abre gratis con
+        <a href="https://www.libreoffice.org/download/download/" style="color:#16a34a">LibreOffice Calc</a>
+        (sin cuenta) o con Google Sheets gratis. Si no querés instalar nada, usá el botón de arriba.</span>
       </div>
 
       <p style="color:#999;font-size:12px;margin-top:20px">
@@ -308,7 +322,7 @@ def mark_kit_sent(user_id):
 # (tabla "applications"), calcula un diagnóstico y, si hay novedades desde
 # el último envío, manda un mail con recomendaciones — misma lógica que la
 # hoja "Diagnóstico" de la planilla, pero portada a Python para poder
-# correr sola cada 5 horas sin que el usuario tenga que abrir el Excel.
+# correr sola cada 2 horas sin que el usuario tenga que abrir el Excel.
 # ---------------------------------------------------------------------
 MOTIVO_TIP = {
     "Sin respuesta del reclutador": "El ghosting es muy común — no lo tomes como algo personal, seguí aplicando en volumen y activá más alertas del Kit.",
@@ -497,6 +511,7 @@ def fetch_rss():
                     "desc": clean(e.get("summary", "") or e.get("description", "")),
                     "link": e.get("link", ""),
                     "lang": feed_cfg["lang"],
+                    "location": "",  # estos feeds son 100% remoto, sin localidad
                 })
         except Exception as ex:
             print(f"Error leyendo {feed_cfg['url']}: {ex}")
@@ -517,6 +532,7 @@ def fetch_json():
                         "desc": clean(j.get("description", "") or j.get("excerpt", "")),
                         "link": j.get("applicationLink") or f"https://himalayas.app/jobs/{j.get('guid','')}",
                         "lang": feed_cfg["lang"],
+                        "location": "",
                     })
             elif feed_cfg["kind"] == "jobicy":
                 for j in (data.get("jobs") or [])[:60]:
@@ -525,6 +541,19 @@ def fetch_json():
                         "desc": clean(j.get("jobDescription", "") or j.get("jobExcerpt", "")),
                         "link": j.get("url", ""),
                         "lang": feed_cfg["lang"],
+                        "location": "",
+                    })
+            elif feed_cfg["kind"] == "vacantesdigitales":
+                for j in (data.get("data") or [])[:80]:
+                    locality = j.get("address_locality") or ""
+                    country_code = j.get("address_country") or ""
+                    location = ", ".join(p for p in [locality, country_code] if p)
+                    jobs.append({
+                        "title": j.get("title", ""),
+                        "desc": clean(j.get("summary", "") or j.get("content", "")),
+                        "link": j.get("apply_url") or j.get("url", ""),
+                        "lang": feed_cfg["lang"],
+                        "location": location,
                     })
         except Exception as ex:
             print(f"Error leyendo {feed_cfg['url']}: {ex}")
@@ -548,7 +577,7 @@ def get_active_users():
         f"{SUPABASE_URL}/rest/v1/users",
         headers=HEADERS,
         params={
-            "select": "id,email,keywords,skills,areas,languages,work_mode,country,seniority",
+            "select": "id,email,keywords,skills,areas,languages,work_mode,country,city,travel_radius,seniority",
             "active": "eq.true",
         },
         timeout=30,
@@ -593,6 +622,36 @@ def matches_seniority(text, seniority):
 def match_score(job_text, user_terms):
     t = job_text.lower()
     return sum(1 for term in user_terms if term and term.lower() in t)
+
+
+def normalize_text(s):
+    s = (s or "").lower()
+    s = unicodedata.normalize("NFKD", s)
+    return "".join(c for c in s if not unicodedata.combining(c))
+
+
+def es_presencial_o_hibrido(text):
+    t = normalize_text(text)
+    return any(w in t for w in ["presencial", "hibrido", "onsite", "on-site", "in office", "in-office"])
+
+
+def fuera_de_zona(job, user):
+    """Solo filtra cuando el usuario eligio radio 'zona' (su barrio/localidad
+    nomas) y cargo su ciudad: si el aviso es presencial/hibrido y menciona
+    una localidad que NO es la suya, lo dejamos afuera. Sin ciudad cargada,
+    o con otro radio, no filtramos nada -- preferimos mostrar de mas a
+    mostrar de menos mientras no tengamos distancia real (lat/long)."""
+    travel_radius = user.get("travel_radius") or "cualquiera"
+    city = (user.get("city") or "").strip()
+    if travel_radius != "zona" or not city:
+        return False
+    full_text = job["title"] + " " + job["desc"]
+    if not es_presencial_o_hibrido(full_text) and not job.get("location"):
+        return False  # remoto puro: nunca lo filtramos por ciudad
+    location = job.get("location") or ""
+    if not location:
+        return False  # sin dato de localidad, no arriesgamos a ocultarlo
+    return normalize_text(city) not in normalize_text(location)
 
 
 def perfil_resumen(user):
@@ -715,6 +774,8 @@ def main():
             if not matches_seniority(full_text, seniority):
                 continue
             if user_terms and match_score(full_text, user_terms) == 0:
+                continue
+            if fuera_de_zona(job, user):
                 continue
             matches.append(job)
 
