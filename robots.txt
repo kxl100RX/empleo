@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://kxl100rx.github.io/trabajoya/sitemap.xml
+Sitemap: https://kxl100rx.github.io/trabajaya/sitemap.xml
