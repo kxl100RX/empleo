@@ -11,19 +11,19 @@
   gtag('js', new Date());
   gtag('config', 'G-HRNVC17WMF');
 </script>
-<title>trabajoya — Alertas de empleo gratis, para siempre</title>
+<title>trabajaya — Alertas de empleo gratis, para siempre</title>
 <meta name="description" content="Anotate una vez y recibí por mail las ofertas de empleo que matchean con tu perfil, cada 2 horas. Gratis para siempre — remoto y presencial, cualquier rubro y nivel.">
 <link rel="canonical" href="https://kxl100rx.github.io/trabajoya/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="trabajoya — El trabajo te busca a vos">
+<meta property="og:title" content="trabajaya — El trabajo te busca a vos">
 <meta property="og:description" content="Alertas de empleo automáticas, gratis para siempre. Anotate una vez y recibí por mail las ofertas que matchean con tu perfil.">
 <meta property="og:url" content="https://kxl100rx.github.io/trabajoya/">
 <meta property="og:image" content="https://kxl100rx.github.io/trabajoya/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="trabajoya — El trabajo te busca a vos">
+<meta name="twitter:title" content="trabajaya — El trabajo te busca a vos">
 <meta name="twitter:description" content="Alertas de empleo automáticas, gratis para siempre.">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebApplication","name":"trabajoya","url":"https://kxl100rx.github.io/trabajoya/","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Alertas de empleo automáticas por mail, gratis para siempre, con un asistente de IA opcional para acompañar cada postulación."}
+{"@context":"https://schema.org","@type":"WebApplication","name":"trabajaya","url":"https://kxl100rx.github.io/trabajoya/","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Alertas de empleo automáticas por mail, gratis para siempre, con un asistente de IA opcional para acompañar cada postulación."}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
@@ -314,7 +314,7 @@
 <body>
 <script>
 (function(){
-  var saved = localStorage.getItem("trabajoya-theme");
+  var saved = localStorage.getItem("trabajaya-theme");
   var wantsDark = saved === "dark" || (!saved && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
   if (wantsDark) document.body.classList.add("dark-mode");
 })();
@@ -454,7 +454,7 @@
 
     <label id="consentRow" style="display:none;align-items:flex-start;gap:8px;font-size:12.5px;color:#8a86a8;margin:12px 0 4px;cursor:pointer">
       <input type="checkbox" id="consent" style="margin-top:3px" required>
-      <span data-i18n="consent_text">Acepto que trabajoya guarde mi email y mi CV para buscarme ofertas de empleo, según la
+      <span data-i18n="consent_text">Acepto que trabajaya guarde mi email y mi CV para buscarme ofertas de empleo, según la
         <a href="privacidad.html" target="_blank" style="color:inherit;text-decoration:underline">Política de Privacidad</a>.</span>
     </label>
     <button type="submit" id="btn" style="display:none" data-i18n="submit_btn">Activar mis alertas gratis</button>
@@ -524,7 +524,7 @@ const I18N = {
     step8_label: "Tips for your profile",
     step8_hint: "(based on your industry and level)",
     tips_empty: "Choose at least one industry above to see role and certification suggestions.",
-    consent_text: 'I agree that trabajoya stores my email and CV to search for job offers for me, per the <a href="privacidad.html" target="_blank" style="color:inherit;text-decoration:underline">Privacy Policy</a>.',
+    consent_text: 'I agree that trabajaya stores my email and CV to search for job offers for me, per the <a href="privacidad.html" target="_blank" style="color:inherit;text-decoration:underline">Privacy Policy</a>.',
     submit_btn: "Activate my free alerts",
     footer_note: "Your data is only used to search for jobs for you. No one else can see your profile.",
     footer_privacy: "Privacy & Terms",
@@ -551,14 +551,14 @@ function applyLanguage(lang) {
   const sel = document.getElementById("langSwitch");
   let lang = "es";
   try {
-    lang = localStorage.getItem("trabajoya_lang") ||
+    lang = localStorage.getItem("trabajaya_lang") ||
       (navigator.language && navigator.language.toLowerCase().startsWith("en") ? "en" : "es");
   } catch (e) { /* localStorage puede fallar en algunos navegadores/privacidad estricta */ }
   if (sel) sel.value = lang;
   applyLanguage(lang);
   if (sel) sel.addEventListener("change", () => {
     applyLanguage(sel.value);
-    try { localStorage.setItem("trabajoya_lang", sel.value); } catch (e) {}
+    try { localStorage.setItem("trabajaya_lang", sel.value); } catch (e) {}
   });
 })();
 
@@ -984,7 +984,7 @@ function renderKit(areas, seniority, skills, country) {
         <a href="https://www.libreoffice.org/download/download/" target="_blank" rel="noopener" style="color:#2563eb;font-weight:700">LibreOffice Calc</a>
         (gratis, sin cuenta) o con una cuenta gratuita de Google Sheets. Si preferís no instalar nada, usá el botón de arriba.</p>
       <div class="premium-banner">
-        <div class="premium-banner-title">⚡ trabajoya Premium</div>
+        <div class="premium-banner-title">⚡ trabajaya Premium</div>
         <p class="premium-banner-sub">Todo lo de arriba sigue 100% gratis para siempre. Premium es un extra opcional:
           un asistente de IA que te acompaña postulación por postulación, mientras seguís buscando.</p>
         <div class="premium-compare">
@@ -1479,7 +1479,7 @@ function updateThemeIcon() {
 updateThemeIcon();
 themeToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark-mode");
-  localStorage.setItem("trabajoya-theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+  localStorage.setItem("trabajaya-theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
   updateThemeIcon();
 });
 </script>
